@@ -28,7 +28,7 @@ create or replace package body tabEMPLOYEES_TEST is
   --------------------------------------------------------------- 
   procedure SEL_T
   -- Выборка работника
-   is
+  is
     v_id        EMPLOYEES.EMPLOYEE_ID%type;
     v_row       EMPLOYEES%rowtype;
     v_forUpdate boolean := true;
@@ -52,7 +52,7 @@ create or replace package body tabEMPLOYEES_TEST is
   --------------------------------------------------------------- 
   procedure INS_T
   -- Добавление карточки работника
-   is
+  is
     v_id  EMPLOYEES.EMPLOYEE_ID%type;
     v_row EMPLOYEES%rowtype;
   begin
@@ -78,7 +78,7 @@ create or replace package body tabEMPLOYEES_TEST is
   --------------------------------------------------------------- 
   procedure INS_T2
   -- Добавление карточки работника 2
-   is
+  is
     v_row EMPLOYEES%rowtype;
   begin
     --v_row.employee_id     := '';
@@ -104,7 +104,7 @@ create or replace package body tabEMPLOYEES_TEST is
   --------------------------------------------------------------- 
   procedure UPD_T
   -- обновление карточки работника
-   is
+  is
     v_id  EMPLOYEES.EMPLOYEE_ID%type;
     v_row EMPLOYEES%rowtype;
   begin
@@ -128,7 +128,7 @@ create or replace package body tabEMPLOYEES_TEST is
   --------------------------------------------------------------- 
   procedure EXIST_T
   -- Есть ли работник
-   is
+  is
     v_id  EMPLOYEES.EMPLOYEE_ID%type;
     v_res boolean;
   begin
@@ -159,7 +159,7 @@ create or replace package body tabEMPLOYEES_TEST is
   --------------------------------------------------------------- 
   procedure DEL_T
   -- Удаление карточки работника
-   is
+  is
     v_row EMPLOYEES%rowtype;
   begin
     v_row.employee_id := EMPLOYEES_SEQ.nextval;
@@ -192,7 +192,7 @@ create or replace package body tabEMPLOYEES_TEST is
   --------------------------------------------------------------- 
   procedure runall
   -- Все тесты
-   is
+  is
   begin
     begin
       -- exception block

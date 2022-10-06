@@ -119,7 +119,6 @@ select p.*
 ;/**/ 
 v_msg := ;  
 /* 
-
   -- Текст сообщения для вновь принятого работника
   C_GREETING_EMP_TEXT constant messages.msg_text%type :=  'Уважаемый %s %s! Вы приняты в качестве %s в подразделение %s. Ваш руководитель: %s %s %s.';
   -- Уважаемый < FIRST_NAME > < LAST_NAME >! Вы приняты в качестве < JOB_TITLE > в подразделение < DEPARTMENT_NAME >. 
@@ -130,3 +129,76 @@ v_msg := ;
   -- “Уважаемый < FIRST_NAME > < LAST_NAME >! В ваше подразделение принят новый сотрудник < FIRST_NAME > < LAST_NAME > в должности < JOB_TITLE > с окладом < SALARY >”.
   
 /**/
+
+select entEMPLOYEES.get_greeting_emp_text(108) as emp_msg
+      ,entEMPLOYEES.get_greeting_mgr_text(108) as mgr_msg
+  from dual; 
+
+---------------------------------------------------------------
+/* 
+
+      ,p_salary           - не обязательны для заполнения
+      ,p_commission_pct     Если они пустые, при добавлении записи эти данные заполняются средними значениями 
+                            по подразделению и штатной должности (JOB_ID, DEPARTMENT_ID)
+/**/
+
+-- Данные о вновьпринятом сотруднике и его руководителе
+  select em.employee_id
+        ,em.first_name
+        ,em.last_name
+        ,j.job_title
+        ,d.department_name
+        ,em.salary
+        ,jmg.job_title   as mgr_job_title
+        ,emg.first_name  as mgr_first_name
+        ,emg.last_name   as mgr_last_name
+        --,em.*
+    from EMPLOYEES em
+    left join JOBS j
+      on j.job_id = em.job_id
+    left join DEPARTMENTS d
+      on d.department_id = em.department_id
+    left join EMPLOYEES emg
+      on emg.employee_id = em.manager_id
+    left join JOBS jmg
+      on jmg.job_id = em.job_id
+   where 1=1
+     and em.employee_id in 107
+     
+;
+
+--------------------------------------------------------------- 
+-- Сотрудники и средние зарплаты по отделу
+select --distinct 
+       em.department_id
+      ,em.job_id
+      ,em.employee_id
+      ,em.salary
+      ,round(avg(em.salary) over ( partition by em.department_id, em.job_id), 2) as avg_dept_salary -- Средняя зарплата сотрудника по отделу
+      --,round(AVG(em.salary) over ( partition by em.department_id, em.job_id order by em.department_id, em.job_id range between unbounded preceding and unbounded following), 2) as avg_dept_salary2
+      --,em.*
+    from EMPLOYEES em
+   where 1=1
+     and em.department_id = 50
+     and em.job_id = 'ST_CLERK'
+    -- and em.employee_id in 107
+--order by em.department_id, em.job_id, em.salary
+;/**/ 
+
+
+--------------------------------------------------------------- 
+-- Cредние зарплаты по отделу
+select distinct 
+       em.department_id
+      ,em.job_id
+      --,em.employee_id
+      --,em.salary
+      ,round(avg(em.salary) over ( partition by em.department_id, em.job_id), 2) as avg_dept_salary -- Средняя зарплата сотрудника по отделу
+      --,round(AVG(em.salary) over ( partition by em.department_id, em.job_id order by em.department_id, em.job_id range between unbounded preceding and unbounded following), 2) as avg_dept_salary2
+      --,em.*
+    from EMPLOYEES em
+   where 1=1
+     and em.department_id = 50
+     and em.job_id = 'ST_CLERK'
+    -- and em.employee_id in 107
+;/**/ 

@@ -47,6 +47,80 @@ create or replace package body entEMPLOYEES_TEST is
   end;
 
   --------------------------------------------------------------- 
+  procedure EMPLOYMENT_T
+  -- Создаем сотрудника с ошибкой
+  is
+    v_id  EMPLOYEES.EMPLOYEE_ID%type;
+    v_row EMPLOYEES%rowtype;
+  begin
+    begin -- exception block
+      dbms_output.put_line('Create EMP'); --< Для отладки 
+      entEmployees.employment(p_first_name     => 'John',
+                              p_last_name      => 'Connor',
+                              p_email          => 'abc@def.com2',
+                              p_phone_number   => '+7804650',
+                              p_job_id         => '',
+                              p_department_id  => '',
+                              p_manager_id     => '',
+                              p_salary         => '',
+                              p_commission_pct => '');
+     
+      -- Найдем клиента
+      select max(e.employee_id)
+        into v_id
+        from EMPLOYEES e
+       where 1=1
+         and e.email = 'abc@def.com2'
+      ;/**/                         
+  
+      tabEMPLOYEES.sel(p_id => v_id, p_row => v_row);
+      
+      dbms_output.put_line('v_id = ' || v_id);
+      dbms_output.put_line('v_row.last_name = ' || v_row.last_name);
+      dbms_output.put_line('v_row.email = ' || v_row.email);
+      
+    exception
+      when entEMPLOYEES.EX_EMPLOYMENT_WR_PARAMS then
+        dbms_output.put_line(utl_lms.format_message('OK ERROR - (%s): %s',TO_CHAR(sqlcode),TO_CHAR(sqlerrm)));
+    end; 
+  end;
+
+  --------------------------------------------------------------- 
+  procedure EMPLOYMENT_T2
+  -- Создаем сотрудника
+  is
+    v_id  EMPLOYEES.EMPLOYEE_ID%type;
+    v_row EMPLOYEES%rowtype;
+  begin
+    dbms_output.put_line('Create EMP'); --< Для отладки 
+    entEmployees.employment(p_first_name     => 'John',
+                            p_last_name      => 'Connor',
+                            p_email          => 'abc@def.com2',
+                            p_phone_number   => '+7804650',
+                            p_job_id         => 'SA_REP',
+                            p_department_id  => 80,
+                            p_manager_id     => '',
+                            p_salary         => '',
+                            p_commission_pct => '');
+     
+    -- Найдем клиента
+    select max(e.employee_id)
+      into v_id
+      from EMPLOYEES e
+     where 1=1
+       and e.email = 'abc@def.com2'
+    ;/**/                         
+  
+    tabEMPLOYEES.sel(p_id => v_id, p_row => v_row);
+      
+    dbms_output.put_line('v_id = ' || v_id);
+    dbms_output.put_line('v_row.last_name = ' || v_row.last_name);
+    dbms_output.put_line('v_row.email = ' || v_row.email);
+      
+  end;
+
+
+  --------------------------------------------------------------- 
   procedure runall
   -- Все тесты
    is
@@ -57,6 +131,14 @@ create or replace package body entEMPLOYEES_TEST is
       dbms_output.put_line('');
       dbms_output.put_line('Тест - MSG_T');
       MSG_T;
+    
+      dbms_output.put_line('');
+      dbms_output.put_line('Тест - EMPLOYMENT_T');
+      EMPLOYMENT_T;
+    
+      dbms_output.put_line('');
+      dbms_output.put_line('Тест - EMPLOYMENT_T2');
+      EMPLOYMENT_T2;
     
     exception
       when others then
