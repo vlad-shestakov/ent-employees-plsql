@@ -4,6 +4,7 @@
 ---------------------------------------------------------------
 
 -- D:\R_STUDIO\PRG\DB projects\2022-10-09 PLSQL exmples HR system\res\SqlLog PLSQL exmples HR system 2022-10-06 v01
+
 ---------------------------------------------------------------
 
 ---------------------------------------------------------------
@@ -43,6 +44,7 @@ select *
  order by 1
 ;/**/ 
 
+--------------------------------------------------------------- 
 -- Сотрудники 
 select *
   from EMPLOYEES
@@ -50,6 +52,14 @@ select *
  order by 1
 ;/**/ 
 
+select em.*
+  from EMPLOYEES em
+ where 1=1
+   and em.employee_id in 107
+ order by 1
+;/**/ 
+
+--------------------------------------------------------------- 
 -- История должностей
 select jh.employee_id
       ,e.first_name || ' ' || e.last_name as emp_name
