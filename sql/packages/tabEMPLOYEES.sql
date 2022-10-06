@@ -17,12 +17,13 @@ create or replace package tabEMPLOYEES is
   /* 
     Процедура выполняет извлечение записи по ключу из таблицы EMPLOYEES 
     
-    p_id         - Код записи для таблицы EMPLOYEES
-    p_row        - Возвращаемая запись EMPLOYEES
-    p_forUpdate
+    ПАРАМЕТРЫ
+      p_id         - Код записи для таблицы EMPLOYEES
+      p_row        - Возвращаемая запись EMPLOYEES
+      p_forUpdate
         true     - выполняется SELECT … FOR UPDATE
         false    - обычный SELECT 
-    p_rase 
+      p_rase 
         true     - происходит вызов исключений
         false    - исключения игнорируются 
     
@@ -38,9 +39,10 @@ create or replace package tabEMPLOYEES is
   /* 
     Выполняет вставку новой строки EMPLOYEES 
     
-    p_row        - Данные вставляемой записи EMPLOYEES
-    p_update
-        true     - если строка с таким индексом уже существует, выполняется обновление данных. 
+    ПАРАМЕТРЫ
+      p_row        - Данные вставляемой записи EMPLOYEES
+      p_update
+        true       - если строка с таким индексом уже существует, выполняется обновление данных. 
     ИСКЛЮЧЕНИЯ
         исключения при дублировании строк и нарушении других ограничений, наложенных на таблицу.
     /**/
@@ -56,14 +58,42 @@ create or replace package tabEMPLOYEES is
   /* 
     Процедура выполняет обновление данных в строке (кроме первичного ключа) EMPLOYEES 
     
-    p_row        - Данные записи EMPLOYEES
-    p_insert
+    ПАРАМЕТРЫ
+      p_row        - Данные записи EMPLOYEES
+      p_insert
         true     - если строка с таким индексом не существует, выполняется вставка новой строки.
     ИСКЛЮЧЕНИЯ
         исключения при дублировании строк и нарушении других ограничений, наложенных на таблицу.
     /**/
   ;
-
+  
+  --------------------------------------------------------------- 
+  procedure del
+  (
+    p_id in EMPLOYEES.employee_id%type
+  )
+  /* 
+    Процедура выполняет удаление строки данных EMPLOYEES
+    
+    ПАРАМЕТРЫ
+      p_id         - Код записи для таблицы EMPLOYEES
+    /**/
+  ;
+  
+  --------------------------------------------------------------- 
+  function exist
+  (
+    p_id in EMPLOYEES.employee_id%type
+  )
+  return boolean 
+  /* 
+    Функция возвращает истину, если строка с указанным ключом существует в таблице EMPLOYEES
+    
+    ПАРАМЕТРЫ
+      p_id         - Код записи для таблицы EMPLOYEES
+    /**/
+  ;
+  
 end tabEMPLOYEES;
 /
 create or replace package body tabEMPLOYEES is
@@ -208,6 +238,54 @@ create or replace package body tabEMPLOYEES is
     end if;
   
   end upd;
+  
+  
+  --------------------------------------------------------------- 
+  procedure del
+  (
+    p_id in EMPLOYEES.employee_id%type
+  )
+  /* 
+    Процедура выполняет удаление строки данных EMPLOYEES
+    
+    ПАРАМЕТРЫ
+      p_id         - Код записи для таблицы EMPLOYEES
+  /**/
+  is
+  begin
+      
+    delete from EMPLOYEES emp
+     where emp.employee_id = p_id;
+  
+  end del;
 
+  --------------------------------------------------------------- 
+  function exist
+  (
+    p_id in EMPLOYEES.employee_id%type
+  )
+  return boolean 
+  /* 
+    Функция возвращает истину, если строка с указанным ключом существует в таблице EMPLOYEES
+    
+    ПАРАМЕТРЫ
+      p_id         - Код записи для таблицы EMPLOYEES
+    /**/
+  is
+    v_res number := 0;
+  begin
+    select count(*) as cnt 
+      into v_res
+      from EMPLOYEES emp
+     where emp.employee_id = p_id;
+    
+    if v_res = 1 then
+      return true;
+    else 
+      return false;
+    end if;
+    
+  end exist;
+  
 end tabEMPLOYEES;
 /
