@@ -2,7 +2,7 @@ create or replace package tabEMPLOYEES is
 
   -- Author  : VSHESTAKOV
   -- Created : 06.10.2022 17:15:18
-  -- Purpose : Бизнес-логика работы с сущностью Работник (EMPLOYEES)
+  -- Purpose : Обработка операций чтения/записи данных в таблицу EMPLOYEES 
 
   -- 07.10.2022 USER - v01
 
