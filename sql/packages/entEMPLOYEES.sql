@@ -6,13 +6,41 @@ create or replace package entEMPLOYEES is
   -- 07.10.2022 VSHESTAKOV - v01
 
   -- Текст сообщения для вновь принятого работника
-  C_GREETING_EMP_TEXT constant messages.msg_text%type :=  'Уважаемый %s %s! Вы приняты в качестве %s в подразделение %s. Ваш руководитель: %s %s %s”.';
+  C_GREETING_EMP_TEXT constant messages.msg_text%type :=  'Уважаемый %s %s! Вы приняты в качестве %s в подразделение %s. Ваш руководитель: %s %s %s.';
   -- Уважаемый < FIRST_NAME > < LAST_NAME >! Вы приняты в качестве < JOB_TITLE > в подразделение < DEPARTMENT_NAME >. 
   -- Ваш руководитель: < JOB_TITLE > < FIRST_NAME > < LAST_NAME >”.
 
   -- Текст сообщения для руководителя нового работника
-  C_GREETING_MGR_TEXT constant messages.msg_text%type :=  'Уважаемый %s %s! В ваше подразделение принят новый сотрудник %s %s в должности %s с окладом %s';
-  -- “Уважаемый < FIRST_NAME > < LAST_NAME >! В ваше подразделение принят новый сотрудник < FIRST_NAME > < LAST_NAME > в должности < JOB_TITLE > с окладом < SALARY >”.
+  C_GREETING_MGR_TEXT constant messages.msg_text%type :=  'Уважаемый %s %s! В ваше подразделение принят новый сотрудник %s %s в должности %s с окладом %s.';
+  -- Уважаемый < FIRST_NAME > < LAST_NAME >! В ваше подразделение принят новый сотрудник < FIRST_NAME > < LAST_NAME > в должности < JOB_TITLE > с окладом < SALARY >.
+  
+  --------------------------------------------------------------- 
+  function get_greeting_emp_text
+  (
+    p_id  in employees.employee_id%type
+  )
+  return messages.msg_text%type
+  /* 
+    Возвращяет текст сообщения для работника
+    
+    ПАРАМЕТРЫ
+      p_id - Код сотрудника
+  /**/
+  ;
+  
+  --------------------------------------------------------------- 
+  function get_greeting_mgr_text
+  (
+    p_id  in employees.employee_id%type
+  )
+  return messages.msg_text%type
+  /* 
+    Возвращяет текст сообщения для руководителя работника
+    
+    ПАРАМЕТРЫ
+      p_id - Код сотрудника
+  /**/
+  ;
   
   --------------------------------------------------------------- 
   procedure employment
@@ -52,6 +80,93 @@ end entEMPLOYEES;
 create or replace package body entEMPLOYEES is
 
  
+  -- Данные о вновьпринятом сотруднике и его руководителе
+  cursor CUR_EMPLOYEE(c_employee_id in number) is
+    select em.employee_id
+          ,em.first_name
+          ,em.last_name
+          ,j.job_title
+          ,d.department_name
+          ,em.salary
+          ,jmg.job_title   as mgr_job_title
+          ,emg.first_name  as mgr_first_name
+          ,emg.last_name   as mgr_last_name
+          --,em.*
+      from EMPLOYEES em
+      left join JOBS j
+        on j.job_id = em.job_id
+      left join DEPARTMENTS d
+        on d.department_id = em.department_id
+      left join EMPLOYEES emg
+        on emg.employee_id = em.manager_id
+      left join JOBS jmg
+        on jmg.job_id = em.job_id
+     where 1=1
+       and em.employee_id = c_employee_id;
+     
+  --------------------------------------------------------------- 
+  function get_greeting_mgr_text
+  (
+    p_id  in employees.employee_id%type
+  )
+  return messages.msg_text%type
+  /* 
+    Возвращяет текст сообщения для руководителя работника
+    
+    ПАРАМЕТРЫ
+      p_id - Код сотрудника
+  /**/
+  is
+    v_res messages.msg_text%type;
+  begin
+    for rec in CUR_EMPLOYEE(p_id)
+    loop 
+      v_res := utl_lms.format_message(
+         entEMPLOYEES.C_GREETING_MGR_TEXT
+         --'Уважаемый %s %s! В ваше подразделение принят новый сотрудник %s %s в должности %s с окладом %s'
+         , TO_CHAR(rec.mgr_first_name)
+         , TO_CHAR(rec.mgr_last_name)
+         , TO_CHAR(rec.first_name)
+         , TO_CHAR(rec.last_name)
+         , TO_CHAR(rec.job_title)
+         , TO_CHAR(rec.salary)
+       );
+    end loop; 
+    return v_res;
+  end;   
+  
+    --------------------------------------------------------------- 
+  function get_greeting_emp_text
+  (
+    p_id  in employees.employee_id%type
+  )
+  return messages.msg_text%type
+  /* 
+    Возвращяет текст сообщения для работника
+    
+    ПАРАМЕТРЫ
+      p_id - Код сотрудника
+  /**/
+  is
+    v_res messages.msg_text%type;
+  begin
+    for rec in CUR_EMPLOYEE(p_id)
+    loop 
+      v_res := utl_lms.format_message(
+         entEMPLOYEES.C_GREETING_EMP_TEXT
+         --'Уважаемый %s %s! Вы приняты в качестве %s в подразделение %s. Ваш руководитель: %s %s %s.'
+         , TO_CHAR(rec.first_name)
+         , TO_CHAR(rec.last_name)
+         , TO_CHAR(rec.job_title)
+         , TO_CHAR(rec.department_name)
+         , TO_CHAR(rec.mgr_job_title)
+         , TO_CHAR(rec.mgr_first_name)
+         , TO_CHAR(rec.mgr_last_name)
+       );
+    end loop; 
+    return v_res;
+  end;   
+  
   --------------------------------------------------------------- 
   procedure employment
   (
