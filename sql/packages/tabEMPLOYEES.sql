@@ -2,9 +2,10 @@ create or replace package tabEMPLOYEES is
 
   -- Author  : VSHESTAKOV
   -- Created : 06.10.2022 17:15:18
-  -- Purpose : Обслу
+  -- Purpose : Бизнес-логика работы с сущностью Работник (EMPLOYEES)
   
-  
+  -- 07.10.2022 USER - v01
+   
   --------------------------------------------------------------- 
   procedure sel2(
     p_id        in    EMPLOYEES.EMPLOYEE_ID%type
