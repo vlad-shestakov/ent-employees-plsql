@@ -7,22 +7,29 @@ create or replace package entEMPLOYEES is
 
   --------------------------------------------------------------- 
   -- КОНСТАНТЫ
-  -- Текст сообщения для вновь принятого работника
-  C_GREETING_EMP_TEXT constant messages.msg_text%type :=  'Уважаемый %s %s! Вы приняты в качестве %s в подразделение %s. Ваш руководитель: %s %s %s.';
-  -- Уважаемый < FIRST_NAME > < LAST_NAME >! Вы приняты в качестве < JOB_TITLE > в подразделение < DEPARTMENT_NAME >. 
-  -- Ваш руководитель: < JOB_TITLE > < FIRST_NAME > < LAST_NAME >”.
-
-  -- Текст сообщения для руководителя нового работника
-  C_GREETING_MGR_TEXT constant messages.msg_text%type :=  'Уважаемый %s %s! В ваше подразделение принят новый сотрудник %s %s в должности %s с окладом %s.';
-  -- Уважаемый < FIRST_NAME > < LAST_NAME >! В ваше подразделение принят новый сотрудник < FIRST_NAME > < LAST_NAME > в должности < JOB_TITLE > с окладом < SALARY >.
   
+    -- Текст сообщения для вновь принятого работника
+    C_GREETING_EMP_TEXT constant messages.msg_text%type :=  'Уважаемый %s %s! Вы приняты в качестве %s в подразделение %s. Ваш руководитель: %s %s %s.';
+    -- Уважаемый < FIRST_NAME > < LAST_NAME >! Вы приняты в качестве < JOB_TITLE > в подразделение < DEPARTMENT_NAME >. 
+    -- Ваш руководитель: < JOB_TITLE > < FIRST_NAME > < LAST_NAME >”.
+
+    -- Текст сообщения для руководителя нового работника
+    C_GREETING_MGR_TEXT constant messages.msg_text%type :=  'Уважаемый %s %s! В ваше подразделение принят новый сотрудник %s %s в должности %s с окладом %s.';
+    -- Уважаемый < FIRST_NAME > < LAST_NAME >! В ваше подразделение принят новый сотрудник < FIRST_NAME > < LAST_NAME > в должности < JOB_TITLE > с окладом < SALARY >.
+    
+    -- Тип отправляемого сообщения
+    С_MSG_TYPE   CONSTANT messages.msg_type%type := 'email'; 
+    
   ---------------------------------------------------------------
   -- ОШИБКИ
-  -- Ошибка  -20101 Не заполнены обязательные параметры (%s)
-  EX_EMPLOYMENT_WR_PARAMS     exception;
-  EX_EMPLOYMENT_WR_PARAMS_MSG constant varchar2(400) := 'Не заполнены обязательные параметры (%s)';
-  pragma exception_init(EX_EMPLOYMENT_WR_PARAMS, -20101); 
+  
+    -- Ошибка  -20101 Не заполнены обязательные параметры (%s)
+    EX_EMPLOYMENT_WR_PARAMS     exception;
+    EX_EMPLOYMENT_WR_PARAMS_MSG constant varchar2(400) := 'Не заполнены обязательные параметры (%s)';
+    pragma exception_init(EX_EMPLOYMENT_WR_PARAMS, -20101); 
         
+    
+    
   --------------------------------------------------------------- 
   function get_greeting_emp_text
   (
@@ -48,6 +55,47 @@ create or replace package entEMPLOYEES is
     
     ПАРАМЕТРЫ
       p_id - Код сотрудника
+  /**/
+  ;
+  
+  --------------------------------------------------------------- 
+  procedure message_ins
+  (
+    p_row    in MESSAGES%rowtype
+   ,p_update in boolean := false
+  )
+  /* 
+    Выполняет вставку новой строки MESSAGES 
+    
+    ПАРАМЕТРЫ
+      p_row        - Данные вставляемой записи MESSAGES
+      p_update
+        true       - если строка с таким индексом уже существует, выполняется обновление данных. 
+    ИСКЛЮЧЕНИЯ
+        исключения при дублировании строк и нарушении других ограничений, наложенных на таблицу.
+  /**/
+  ;
+  
+  
+  --------------------------------------------------------------- 
+  procedure message_ins
+  (
+    p_msg_text  in messages.msg_text%type
+   ,p_msg_type  in messages.msg_type%type
+   ,p_dest_addr in messages.dest_addr%type
+   ,p_msg_state in messages.msg_state%type := 0
+   ,p_update    in boolean := false
+  )
+  /* 
+    Выполняет вставку новой строки MESSAGES 
+    
+    ПАРАМЕТРЫ
+      p_msg_text   - текст сообщения 
+     ,p_msg_type   - тип сообщения (email, sms и т.п.) 
+     ,p_dest_addr  - адрес получателя сообщения (email, номер телефона) 
+     ,p_msg_state  - статус обработки сообщения внешней системой (0 - добавлено в очередь, 1 - успешно отправлено, -1 - отправлено с ошибкой) 
+     ,p_update     
+        true       - если строка с таким индексом уже существует, выполняется обновление данных. 
   /**/
   ;
   
@@ -196,6 +244,76 @@ create or replace package body entEMPLOYEES is
     return v_res;
   end;
   
+  
+  --------------------------------------------------------------- 
+  procedure message_ins
+  (
+    p_row    in MESSAGES%rowtype
+   ,p_update in boolean := false
+  )
+  /* 
+    Выполняет вставку новой строки MESSAGES 
+    
+    ПАРАМЕТРЫ
+      p_row        - Данные вставляемой записи MESSAGES
+      p_update
+        true       - если строка с таким индексом уже существует, выполняется обновление данных. 
+    ИСКЛЮЧЕНИЯ
+        исключения при дублировании строк и нарушении других ограничений, наложенных на таблицу.
+    /**/
+  is
+  begin
+    -- Попытка добавить данные
+    begin
+      insert into MESSAGES
+      values p_row;
+    exception
+      when dup_val_on_index then
+        -- Если не удалось по дублю 
+        -- пробуем обновить
+        if p_update then
+          update MESSAGES m
+             set row = p_row
+           where m.id = p_row.id;
+        else
+          raise;
+        end if;
+    end;
+  end message_ins;
+  
+  --------------------------------------------------------------- 
+  procedure message_ins
+  (
+    p_msg_text  in messages.msg_text%type
+   ,p_msg_type  in messages.msg_type%type
+   ,p_dest_addr in messages.dest_addr%type
+   ,p_msg_state in messages.msg_state%type := 0
+   ,p_update    in boolean := false
+  )
+  /* 
+    Выполняет вставку новой строки MESSAGES 
+    
+    ПАРАМЕТРЫ
+      p_msg_text   - текст сообщения 
+     ,p_msg_type   - тип сообщения (email, sms и т.п.) 
+     ,p_dest_addr  - адрес получателя сообщения (email, номер телефона) 
+     ,p_msg_state  - статус обработки сообщения внешней системой (0 - добавлено в очередь, 1 - успешно отправлено, -1 - отправлено с ошибкой) 
+     ,p_update     
+        true       - если строка с таким индексом уже существует, выполняется обновление данных. 
+  /**/
+  is
+    v_row    MESSAGES%rowtype;
+  begin
+    
+    v_row.msg_text  := p_msg_text;
+    v_row.msg_type  := p_msg_type;
+    v_row.dest_addr := p_dest_addr;
+    v_row.msg_state := p_msg_state;
+    
+    message_ins(p_row => v_row, p_update => p_update);
+                
+  end message_ins;
+  
   --------------------------------------------------------------- 
   procedure employment
   (
@@ -230,8 +348,11 @@ create or replace package body entEMPLOYEES is
       исключения при нарушении ограничений на данные таблицы.
   /**/
   is
-    v_row EMPLOYEES%rowtype;
-    v_err varchar2(250);
+    v_row        EMPLOYEES%rowtype;
+    v_err        varchar2(250);
+    v_emp_msg    messages.msg_text%type;
+    v_mgr_msg    messages.msg_text%type;
+    v_mgr_email  messages.dest_addr%type;
   begin
     
     -- Проверка на обязательные параметры
@@ -247,6 +368,7 @@ create or replace package body entEMPLOYEES is
     --dbms_output.put_line('p_salary = ' || p_salary); --< Для отладки 
     --dbms_output.put_line('p_commission_pct = ' || p_commission_pct); --< Для отладки 
     
+    v_row.employee_id     := EMPLOYEES_SEQ.Nextval;
     v_row.first_name      := p_first_name;
     v_row.last_name       := p_last_name;
     v_row.email           := p_email;
@@ -271,9 +393,39 @@ create or replace package body entEMPLOYEES is
       end loop; 
     end if;
     
+    --dbms_output.put_line('v_row.employee_id = ' || v_row.employee_id); --< Для отладки 
+    
     -- Создаем сотрудика
     tabEMPLOYEES.ins(p_row => v_row);
     
+    -- Получим тексты сообщений и почту руководителя
+    select entEMPLOYEES.get_greeting_emp_text(v_row.employee_id) as emp_msg
+          ,entEMPLOYEES.get_greeting_mgr_text(v_row.employee_id) as mgr_msg
+          ,emg.email 
+      into v_emp_msg, v_mgr_msg, v_mgr_email
+      from dual
+      left join EMPLOYEES em
+        on em.employee_id = v_row.employee_id
+      left join EMPLOYEES emg
+        on emg.employee_id = em.manager_id;
+    
+    --dbms_output.put_line('v_row.employee_id = ' || v_row.employee_id); --< Для отладки 
+    --dbms_output.put_line('v_mgr_email = ' || v_mgr_email); --< Для отладки 
+    
+    -- Отправляем почту новому сотруднику
+    entEMPLOYEES.message_ins(
+        p_msg_text  => v_emp_msg
+       ,p_msg_type  => С_MSG_TYPE
+       ,p_dest_addr => v_row.email);
+       
+    if v_mgr_email is not null then 
+      -- Отправляем почту руководителю сотрудника
+      entEMPLOYEES.message_ins(
+          p_msg_text  => v_mgr_msg
+         ,p_msg_type  => С_MSG_TYPE
+         ,p_dest_addr => v_mgr_email);
+    end if;
+       
   end employment; 
   
 end entEMPLOYEES;

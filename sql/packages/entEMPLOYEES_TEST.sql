@@ -89,17 +89,23 @@ create or replace package body entEMPLOYEES_TEST is
   procedure EMPLOYMENT_T2
   -- Создаем сотрудника
   is
-    v_id  EMPLOYEES.EMPLOYEE_ID%type;
-    v_row EMPLOYEES%rowtype;
+    v_id          EMPLOYEES.EMPLOYEE_ID%type;
+    v_row         EMPLOYEES%rowtype;
+    v_msg_type    MESSAGES.msg_type%type := entEmployees.С_MSG_TYPE;
+    v_dest_addr   MESSAGES.dest_addr%type;
+    v_dest_addr2  MESSAGES.dest_addr%type;
   begin
+    v_dest_addr  := 'abc@def.com2';
+    v_dest_addr2 := 'NGREENBE';
+    
     dbms_output.put_line('Create EMP'); --< Для отладки 
     entEmployees.employment(p_first_name     => 'John',
                             p_last_name      => 'Connor',
-                            p_email          => 'abc@def.com2',
+                            p_email          => v_dest_addr,
                             p_phone_number   => '+7804650',
                             p_job_id         => 'SA_REP',
                             p_department_id  => 80,
-                            p_manager_id     => '',
+                            p_manager_id     => 108,
                             p_salary         => '',
                             p_commission_pct => '');
      
@@ -116,6 +122,57 @@ create or replace package body entEMPLOYEES_TEST is
     dbms_output.put_line('v_id = ' || v_id);
     dbms_output.put_line('v_row.last_name = ' || v_row.last_name);
     dbms_output.put_line('v_row.email = ' || v_row.email);
+    
+    
+    -- Найдем сообщение
+    dbms_output.put_line('Find messages:'); --< Для отладки 
+    for rec in (--
+                select m.*
+                  from MESSAGES m
+                 where 1=1
+                   and m.msg_type = v_msg_type
+                   and m.dest_addr in (v_dest_addr, v_dest_addr2)
+                   --and rownum <= 1
+                 order by 1 desc
+               )
+    loop
+      dbms_output.put_line('  id = ' || rec.id);
+      dbms_output.put_line('  rec.p_msg_text = ' || rec.msg_text);
+      dbms_output.put_line('  rec.msg_state  = ' || rec.msg_state);
+    end loop; -- Конец перебора
+      
+  end;
+
+  --------------------------------------------------------------- 
+  procedure MESSAGE_INS_T
+  -- Создаем сообщение в очереди
+  is
+    v_msg_type  MESSAGES.msg_type%type;
+    v_dest_addr MESSAGES.dest_addr%type;
+  begin                
+    v_msg_type := 'sms';
+    v_dest_addr := 'abc@def.com3';
+    
+    entEMPLOYEES.message_ins(
+        p_msg_text  => 'Уважаемый Neena Kochhar! В ваше подразделение принят новый сотрудник Nancy Greenberg в должности Finance Manager с окладом 12008.'
+       ,p_msg_type  => v_msg_type
+       ,p_dest_addr => v_dest_addr);
+       
+    -- Найдем сообщение
+    for rec in (--
+                select m.*
+                  from MESSAGES m
+                 where 1=1
+                   and m.msg_type = v_msg_type
+                   and m.dest_addr = v_dest_addr
+                   and rownum <= 1
+                 order by 1 desc
+               )
+    loop
+      dbms_output.put_line('id = ' || rec.id);
+      dbms_output.put_line('rec.p_msg_text = ' || rec.msg_text);
+      dbms_output.put_line('rec.msg_state  = ' || rec.msg_state);
+    end loop; -- Конец перебора
       
   end;
 
@@ -131,6 +188,10 @@ create or replace package body entEMPLOYEES_TEST is
       dbms_output.put_line('');
       dbms_output.put_line('Тест - MSG_T');
       MSG_T;
+    
+      dbms_output.put_line('');
+      dbms_output.put_line('Тест - MESSAGE_INS_T');
+      MESSAGE_INS_T;
     
       dbms_output.put_line('');
       dbms_output.put_line('Тест - EMPLOYMENT_T');
