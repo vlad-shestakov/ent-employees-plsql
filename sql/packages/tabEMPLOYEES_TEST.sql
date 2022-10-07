@@ -34,7 +34,8 @@ create or replace package body tabEMPLOYEES_TEST is
     v_forUpdate boolean := true;
     v_rase      boolean := true;
   begin
-  
+    dbms_output.put_line('Выбор работника 108'); --< Для отладки 
+    
     v_id        := 108;
     v_rase      := true;
     v_forUpdate := false;
@@ -56,22 +57,22 @@ create or replace package body tabEMPLOYEES_TEST is
     v_id  EMPLOYEES.EMPLOYEE_ID%type;
     v_row EMPLOYEES%rowtype;
   begin
-  
+    dbms_output.put_line('Вставка работника из копии'); --< Для отладки 
+    
     v_id := 108;
   
     tabEMPLOYEES.sel(p_id => v_id, p_row => v_row);
   
     dbms_output.put_line('v_row.employee_id = ' || v_row.employee_id);
-    dbms_output.put_line('v_row.upd_counter = ' || v_row.upd_counter);
   
     v_row.employee_id := EMPLOYEES_SEQ.nextval;
-    v_row.email       := v_row.email || '2';
+    v_row.email       := v_row.email || '_2';
+    
+    dbms_output.put_line('Inserting...'); --< Для отладки 
     tabEMPLOYEES.ins(p_row => v_row, p_update => false);
   
     dbms_output.put_line('v_row.employee_id = ' || v_row.employee_id);
-    dbms_output.put_line('v_row.last_name = ' || v_row.last_name);
     dbms_output.put_line('v_row.email = ' || v_row.email);
-    dbms_output.put_line('v_row.upd_counter = ' || v_row.upd_counter);
   end;
   
   
@@ -81,6 +82,8 @@ create or replace package body tabEMPLOYEES_TEST is
    is
     v_row EMPLOYEES%rowtype;
   begin
+    dbms_output.put_line('Вставка работника по данным'); --< Для отладки 
+    
     --v_row.employee_id     := '';
     --v_row.employee_id := EMPLOYEES_SEQ.nextval;
     v_row.first_name      := 'John';
@@ -108,20 +111,22 @@ create or replace package body tabEMPLOYEES_TEST is
     v_id  EMPLOYEES.EMPLOYEE_ID%type;
     v_row EMPLOYEES%rowtype;
   begin
+    dbms_output.put_line('Обновление карточки работника, ЗП + 10 000'); --< Для отладки 
   
     v_id := 108;
-  
     tabEMPLOYEES.sel(p_id => v_id, p_row => v_row);
   
     dbms_output.put_line('v_row.employee_id = ' || v_row.employee_id);
-    dbms_output.put_line('v_row.upd_counter = ' || v_row.upd_counter);
+    dbms_output.put_line('v_row.last_name = ' || v_row.last_name);
+    dbms_output.put_line('v_row.salary = ' || v_row.salary);
   
-    v_row.upd_counter := v_row.upd_counter + 1;
+    v_row.salary       := v_row.salary + 10000;
+    
+    dbms_output.put_line('Updating...'); --< Для отладки 
     tabEMPLOYEES.upd(p_row => v_row, p_insert => false);
   
     dbms_output.put_line('v_row.employee_id = ' || v_row.employee_id);
-    dbms_output.put_line('v_row.last_name = ' || v_row.last_name);
-    dbms_output.put_line('v_row.upd_counter = ' || v_row.upd_counter);
+    dbms_output.put_line('v_row.salary = ' || v_row.salary);
   end;
   
   
@@ -132,6 +137,7 @@ create or replace package body tabEMPLOYEES_TEST is
     v_id  EMPLOYEES.EMPLOYEE_ID%type;
     v_res boolean;
   begin
+    dbms_output.put_line('Проверка, есть ли работник - Есть'); --< Для отладки 
   
     v_id := 108;
     v_res := tabEMPLOYEES.exist(p_id => v_id);
@@ -147,6 +153,7 @@ create or replace package body tabEMPLOYEES_TEST is
     v_id  EMPLOYEES.EMPLOYEE_ID%type;
     v_res boolean;
   begin
+    dbms_output.put_line('Проверка, есть ли работник - Нет'); --< Для отладки 
   
     v_id := -108;
     v_res := tabEMPLOYEES.exist(p_id => v_id);
@@ -162,6 +169,8 @@ create or replace package body tabEMPLOYEES_TEST is
    is
     v_row EMPLOYEES%rowtype;
   begin
+    dbms_output.put_line('Удаление карточки работника'); --< Для отладки 
+    
     v_row.employee_id := EMPLOYEES_SEQ.nextval;
     v_row.first_name      := 'John';
     v_row.last_name       := 'Connor2';

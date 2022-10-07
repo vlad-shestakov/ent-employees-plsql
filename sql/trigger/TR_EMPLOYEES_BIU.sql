@@ -4,7 +4,8 @@ create or replace trigger TR_EMPLOYEES_BIU
 begin
   -- Обновление полей
   if INSERTING then
-    if :old.employee_id is null then 
+    
+    if :new.employee_id is null then 
       :new.employee_id := EMPLOYEES_SEQ.nextval;
     end if;
     :new.upd_counter := 0;
@@ -12,6 +13,7 @@ begin
     :new.crt_date := sysdate;
     
   elsif UPDATING then
+    
     :new.upd_user := upper(sys_context('USERENV', 'SESSION_USER'));
     :new.upd_date := sysdate;
   end if;
