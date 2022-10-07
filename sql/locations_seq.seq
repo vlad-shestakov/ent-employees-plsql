@@ -1,0 +1,7 @@
+﻿create sequence LOCATIONS_SEQ
+minvalue 1
+maxvalue 9900
+start with 3300
+increment by 100
+nocache;
+
