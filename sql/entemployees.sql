@@ -37,12 +37,6 @@ create or replace package entEMPLOYEES is
     C_MSG_PAYRISE_MGR_TXT constant messages.msg_text%type :=  'Уважаемый %s %s! Вашему сотруднику %s %s увеличен оклад с %s до %s.';
     -- Уважаемый < FIRST_NAME > < LAST_NAME >! Вашему сотруднику < FIRST_NAME > < LAST_NAME > увеличен оклад с < SALARY old > до < SALARY new >.
 
-    С_MSG_TYPE_EMAIL   CONSTANT messages.msg_type%type := 'email';
-    С_MSG_TYPE_SMS   CONSTANT messages.msg_type%type := 'sms';
-    С_MSG_TYPE_DEF   CONSTANT messages.msg_type%type := С_MSG_TYPE_EMAIL
-    -- Тип отправляемого сообщения по-умолчанию
-    ;
-
   ---------------------------------------------------------------
   -- ОШИБКИ
 
@@ -57,48 +51,6 @@ create or replace package entEMPLOYEES is
     EX_PAYRISE_EMP_SALARY_EXCCESS_MSG constant varchar2(400) := 'Превышение максимального оклада сотрудника (%s)';
     pragma exception_init(EX_PAYRISE_EMP_SALARY_EXCCESS, -20102);
 
-  ---------------------------------------------------------------
-  procedure MESSAGE_INS
-  (
-    p_row    in MESSAGES%rowtype
-   ,p_update in boolean := false
-  )
-  /*
-    Выполняет вставку новой строки MESSAGES
-    Перегрузка по строке
-
-    ПАРАМЕТРЫ
-      p_row        - Данные вставляемой записи MESSAGES
-      p_update
-        true       - если строка с таким индексом уже существует, выполняется обновление данных.
-    ИСКЛЮЧЕНИЯ
-        исключения при дублировании строк и нарушении других ограничений, наложенных на таблицу.
-  /**/
-  ;
-
-
-  ---------------------------------------------------------------
-  procedure MESSAGE_INS
-  (
-    p_msg_text  in messages.msg_text%type
-   ,p_dest_addr in messages.dest_addr%type
-   ,p_msg_type  in messages.msg_type%type := С_MSG_TYPE_DEF
-   ,p_msg_state in messages.msg_state%type := 0
-   ,p_update    in boolean := false
-  )
-  /*
-    Выполняет вставку новой строки MESSAGES
-    Перегрузка по фактическим полям
-
-    ПАРАМЕТРЫ
-      p_msg_text   - текст сообщения
-     ,p_dest_addr  - адрес получателя сообщения (email, номер телефона)
-     ,p_msg_type   - тип сообщения (email, sms и т.п.)
-     ,p_msg_state  - статус обработки сообщения внешней системой (0 - добавлено в очередь, 1 - успешно отправлено, -1 - отправлено с ошибкой)
-     ,p_update
-        true       - если строка с таким индексом уже существует, выполняется обновление данных.
-  /**/
-  ;
 
   ---------------------------------------------------------------
   procedure EMPLOYMENT
@@ -112,7 +64,7 @@ create or replace package entEMPLOYEES is
    ,p_manager_id             in employees.manager_id%type
    ,p_salary                 in employees.salary%type
    ,p_commission_pct         in employees.commission_pct%type
-   ,p_msg_type               in messages.msg_type%type := С_MSG_TYPE_EMAIL -- Тип сообщения для отправки sms / email
+   ,p_msg_type               in messages.msg_type%type := tabEMPLOYEES.С_MSG_TYPE_EMAIL -- Тип сообщения для отправки sms / email
   )
   /*
     Процедура реализует функционал приема на работу нового сотрудника.
@@ -143,7 +95,7 @@ create or replace package entEMPLOYEES is
   (
     p_employee_id            in employees.employee_id%type
    ,p_salary                 in employees.salary%type default null 
-   ,p_msg_type               in messages.msg_type%type := С_MSG_TYPE_EMAIL -- Тип сообщения для отправки sms / email
+   ,p_msg_type               in messages.msg_type%type := tabEMPLOYEES.С_MSG_TYPE_EMAIL -- Тип сообщения для отправки sms / email
   )
   /*
     Процедура реализует повышение оклада сотруднику
@@ -164,7 +116,7 @@ create or replace package entEMPLOYEES is
   procedure LEAVE
   (
     p_employee_id            in employees.employee_id%type
-   ,p_msg_type               in messages.msg_type%type      := С_MSG_TYPE_EMAIL -- Тип сообщения для отправки sms / email
+   ,p_msg_type               in messages.msg_type%type      := tabEMPLOYEES.С_MSG_TYPE_EMAIL -- Тип сообщения для отправки sms / email
   )
   /*
     Процедура реализует увольнение сотрудника
@@ -184,77 +136,6 @@ end entEMPLOYEES;
 create or replace package body entEMPLOYEES is
 
   ---------------------------------------------------------------
-  procedure MESSAGE_INS
-  (
-    p_row    in MESSAGES%rowtype
-   ,p_update in boolean := false
-  )
-  /*
-    Выполняет вставку новой строки MESSAGES
-    Перегрузка по строке
-
-    ПАРАМЕТРЫ
-      p_row        - Данные вставляемой записи MESSAGES
-      p_update
-        true       - если строка с таким индексом уже существует, выполняется обновление данных.
-    ИСКЛЮЧЕНИЯ
-        исключения при дублировании строк и нарушении других ограничений, наложенных на таблицу.
-    /**/
-  is
-  begin
-    -- Попытка добавить данные
-    begin
-      insert into MESSAGES
-      values p_row;
-    exception
-      when dup_val_on_index then
-        -- Если не удалось по дублю
-        -- пробуем обновить
-        if p_update then
-          update MESSAGES m
-             set row = p_row
-           where m.id = p_row.id;
-        else
-          raise;
-        end if;
-    end;
-  end message_ins;
-
-  ---------------------------------------------------------------
-  procedure MESSAGE_INS
-  (
-    p_msg_text  in messages.msg_text%type
-   ,p_dest_addr in messages.dest_addr%type
-   ,p_msg_type  in messages.msg_type%type := С_MSG_TYPE_DEF
-   ,p_msg_state in messages.msg_state%type := 0
-   ,p_update    in boolean := false
-  )
-  /*
-    Выполняет вставку новой строки MESSAGES
-    Перегрузка по фактическим полям
-
-    ПАРАМЕТРЫ
-      p_msg_text   - текст сообщения
-     ,p_dest_addr  - адрес получателя сообщения (email, номер телефона)
-     ,p_msg_type   - тип сообщения (email, sms и т.п.)
-     ,p_msg_state  - статус обработки сообщения внешней системой (0 - добавлено в очередь, 1 - успешно отправлено, -1 - отправлено с ошибкой)
-     ,p_update
-        true       - если строка с таким индексом уже существует, выполняется обновление данных.
-  /**/
-  is
-    v_row    MESSAGES%rowtype;
-  begin
-
-    v_row.msg_text  := p_msg_text;
-    v_row.msg_type  := p_msg_type;
-    v_row.dest_addr := p_dest_addr;
-    v_row.msg_state := p_msg_state;
-
-    message_ins(p_row => v_row, p_update => p_update);
-
-  end message_ins;
-
-  ---------------------------------------------------------------
   procedure EMPLOYMENT
   (
     p_first_name             in employees.first_name%type
@@ -266,7 +147,7 @@ create or replace package body entEMPLOYEES is
    ,p_manager_id             in employees.manager_id%type
    ,p_salary                 in employees.salary%type
    ,p_commission_pct         in employees.commission_pct%type
-   ,p_msg_type               in messages.msg_type%type := С_MSG_TYPE_EMAIL -- Тип сообщения для отправки sms / email
+   ,p_msg_type               in messages.msg_type%type := tabEMPLOYEES.С_MSG_TYPE_EMAIL -- Тип сообщения для отправки sms / email
   )
   /*
     Процедура реализует функционал приема на работу нового сотрудника.
@@ -291,36 +172,26 @@ create or replace package body entEMPLOYEES is
       исключения при нарушении ограничений на данные таблицы.
   /**/
   is
-  
-      
-      -- Cредние зарплаты, комиссии по отделу и должности
-      cursor CUR_AVG_DEPT_SALARY(
-        c_department_id in employees.department_id%type
-       ,c_job_id        in employees.job_id%type
-      )
-      is
-        select distinct
-               em.department_id
-              ,em.job_id
-              ,round(avg(em.salary) over ( partition by em.department_id, em.job_id), 2) as avg_dept_salary -- Средняя зарплата сотрудника по отделу
-              ,round(avg(em.commission_pct) over ( partition by em.department_id, em.job_id), 2) as avg_dept_commission_pct -- Средняя комиссия сотрудника по отделу
-            from EMPLOYEES em
-           where 1=1
-             and em.department_id = C_DEPARTMENT_ID
-             and em.job_id = C_JOB_ID
-        ;/**/
         
     v_row        EMPLOYEES%rowtype;
-    v_err        varchar2(250);
+    v_row_mgr    EMPLOYEES%rowtype;
+    v_job        JOBS%rowtype;
+    v_job_mgr    JOBS%rowtype;
+    v_department DEPARTMENTS%rowtype;
+    v_err        varchar2(250) := '';
     v_message    messages.msg_text%type;
+    v_msg_addr   messages.dest_addr%type;
   begin
 
     -- Проверка на обязательные параметры
-    select ltrim(decode(p_department_id, null, 'p_department_id')
-           || ', ' || decode(p_job_id, null, 'p_job_id')
-           , ', ')
-      into v_err
-      from dual;
+    if p_department_id is null then 
+       v_err := 'p_department_id';
+    end if;
+    if p_department_id is null then 
+       v_err := v_err || ', p_job_id';
+    end if;
+    v_err := ltrim(v_err, ', ');
+    
     if v_err is not null then
       RAISE_APPLICATION_ERROR(-20101, utl_lms.format_message(EX_EMPLOYMENT_WR_PARAMS_MSG, v_err));
     end if;
@@ -341,7 +212,7 @@ create or replace package body entEMPLOYEES is
     -- Если не заполнен размер зп или комиссии
     if p_salary is null or p_commission_pct is null then
       -- Получим размер зп, или комиссии из среднего по отделу и должности
-      for rec in CUR_AVG_DEPT_SALARY(p_department_id, p_job_id)
+      for rec in tabEMPLOYEES.CUR_AVG_DEPT_SALARY(p_department_id, p_job_id)
       loop
         v_row.salary          := nvl(p_salary, rec.avg_dept_salary);
         v_row.commission_pct  := nvl(p_commission_pct, rec.avg_dept_commission_pct);
@@ -349,65 +220,86 @@ create or replace package body entEMPLOYEES is
     end if;
 
     -- Создаем сотрудика
-    tabEMPLOYEES.ins(p_row => v_row);
+    tabEMPLOYEES.INS(p_row => v_row);
     
-    -- Данные сотрудника
-    for rec in (-- Получим тексты сообщений и, адрес руководителя и сотрудника
-                select decode(p_msg_type, С_MSG_TYPE_EMAIL, em.mgr_email, em.mgr_phone_number) as mgr_addr -- телефон или email руководителя
-                      ,decode(p_msg_type, С_MSG_TYPE_EMAIL, em.email, em.phone_number)         as emp_addr -- телефон или email сотрудника
-                      ,em.*
-                  from VW_EMPLOYEES em
-                 where em.employee_id = v_row.employee_id
-               )
-    loop 
-      -- Отправляем почту руководителю сотрудника
-      if rec.mgr_addr is not null then
-          
-        v_message := utl_lms.format_message(
-           entEMPLOYEES.C_MSG_EMPLT_GREET_MGR_TXT
-           --'Уважаемый %s %s! В ваше подразделение принят новый сотрудник %s %s в должности %s с окладом %s'
-           , TO_CHAR(rec.mgr_first_name)
-           , TO_CHAR(rec.mgr_last_name)
-           , TO_CHAR(rec.first_name)
-           , TO_CHAR(rec.last_name)
-           , TO_CHAR(rec.job_title)
-           , TO_CHAR(rec.salary)
-         );
-         
-        entEMPLOYEES.message_ins(
-            p_msg_text  => v_message
-           ,p_msg_type  => p_msg_type
-           ,p_dest_addr => rec.mgr_addr);
-      end if;
-      
-      -- Сообщение для сотрудника
+    -- Должность сотрудника                 
+    tabEMPLOYEES.JOB_SEL(p_job_id => v_row.job_id,
+                         p_row    => v_job,
+                         p_rase   => false);
+                         
+    -- Отдел сотрудника  
+    tabEMPLOYEES.DEPARTMENTS_SEL(p_department_id => v_row.department_id,
+                                 p_row           => v_department,
+                                 p_rase          => false);
+    
+    -- Получаем данные руководителя
+    tabEMPLOYEES.SEL(p_id   => v_row.manager_id,
+                     p_row  => v_row_mgr);
+    
+    
+    -- Отправляем почту руководителю сотрудника
+    if v_row_mgr.last_name is not null then
       v_message := utl_lms.format_message(
-         entEMPLOYEES.C_MSG_EMPLT_GREET_EMP_TXT
-         --'Уважаемый %s %s! Вы приняты в качестве %s в подразделение %s.'
-         , TO_CHAR(rec.first_name)
-         , TO_CHAR(rec.last_name)
-         , TO_CHAR(rec.job_title)
-         , TO_CHAR(rec.department_name)
-       );
-       -- Если есть руководитель, ссылка на него
-       if rec.mgr_last_name is not null then
-         v_message := v_message || ' ' || utl_lms.format_message(
-           entEMPLOYEES.C_MSG_EMPLT_GREET_EMP_TXT2
-           --'Ваш руководитель: %s %s %s.'
-           , TO_CHAR(rec.mgr_job_title)
-           , TO_CHAR(rec.mgr_first_name)
-           , TO_CHAR(rec.mgr_last_name)
-         );
-       end if;
-       
-      -- Отправляем почту новому сотруднику
-      entEMPLOYEES.message_ins(
+                           entEMPLOYEES.C_MSG_EMPLT_GREET_MGR_TXT
+                           --'Уважаемый %s %s! В ваше подразделение принят новый сотрудник %s %s в должности %s с окладом %s'
+                           , TO_CHAR(v_row_mgr.first_name)
+                           , TO_CHAR(v_row_mgr.last_name)
+                           , TO_CHAR(v_row.first_name)
+                           , TO_CHAR(v_row.last_name)
+                           , TO_CHAR(v_job.job_title)
+                           , TO_CHAR(v_row.salary)
+                         );
+      case p_msg_type 
+        when tabEMPLOYEES.С_MSG_TYPE_EMAIL
+        then v_msg_addr := v_row_mgr.email;
+        else v_msg_addr := v_row_mgr.phone_number;
+      end case;
+      
+      tabEMPLOYEES.MESSAGE_INS(
           p_msg_text  => v_message
          ,p_msg_type  => p_msg_type
-         ,p_dest_addr => rec.emp_addr);
+         ,p_dest_addr => v_msg_addr);
+         
+    end if;
        
-    end loop; -- Данные сотрудника
-
+    v_message := utl_lms.format_message(
+                         entEMPLOYEES.C_MSG_EMPLT_GREET_EMP_TXT
+                         --'Уважаемый %s %s! Вы приняты в качестве %s в подразделение %s.'
+                         , TO_CHAR(v_row.first_name)
+                         , TO_CHAR(v_row.last_name)
+                         , TO_CHAR(v_job.job_title)
+                         , TO_CHAR(v_department.department_name)
+                       ) ;
+                       
+    -- Если есть руководитель, ссылка на него
+    if v_row_mgr.last_name is not null then
+      
+      -- Должность руководителя   
+      tabEMPLOYEES.JOB_SEL(p_job_id => v_row_mgr.job_id,
+                           p_row    => v_job_mgr,
+                           p_rase   => false);
+                           
+      v_message := v_message || ' ' || utl_lms.format_message(
+                             entEMPLOYEES.C_MSG_EMPLT_GREET_EMP_TXT2
+                             --'Ваш руководитель: %s %s %s.'
+                             , TO_CHAR(v_job_mgr.job_title)
+                             , TO_CHAR(v_row_mgr.first_name)
+                             , TO_CHAR(v_row_mgr.last_name)
+                           );
+    end if;
+    
+    case p_msg_type 
+      when tabEMPLOYEES.С_MSG_TYPE_EMAIL
+      then v_msg_addr := v_row.email;
+      else v_msg_addr := v_row.phone_number;
+    end case;
+    
+    -- Отправляем почту новому сотруднику
+    tabEMPLOYEES.MESSAGE_INS(
+        p_msg_text  => v_message
+       ,p_msg_type  => p_msg_type
+       ,p_dest_addr => v_msg_addr);
+       
   end EMPLOYMENT;
 
 
@@ -416,7 +308,7 @@ create or replace package body entEMPLOYEES is
   (
     p_employee_id            in employees.employee_id%type
    ,p_salary                 in employees.salary%type default null 
-   ,p_msg_type               in messages.msg_type%type := С_MSG_TYPE_EMAIL -- Тип сообщения для отправки sms / email
+   ,p_msg_type               in messages.msg_type%type := tabEMPLOYEES.С_MSG_TYPE_EMAIL -- Тип сообщения для отправки sms / email
   )
   /*
     Процедура реализует повышение оклада сотруднику
@@ -435,53 +327,66 @@ create or replace package body entEMPLOYEES is
     v_salary_old  employees.salary%type;
     v_salary      employees.salary%type;
     v_row         employees%rowtype;
+    v_row_mgr     employees%rowtype;
+    v_job         jobs%rowtype;
     v_message     messages.msg_text%type;
+    v_msg_addr    messages.dest_addr%type;
   begin
     
-    -- Получим сотрудника
-    for rec in (-- Получим тексты сообщений и, адрес руководителя и сотрудника
-                select decode(p_msg_type, С_MSG_TYPE_EMAIL, em.mgr_email, em.mgr_phone_number) as mgr_addr -- телефон или email руководителя
-                      ,em.*
-                  from VW_EMPLOYEES em
-                 where 1=1
-                   and em.employee_id = p_employee_id
-               )
-    loop
-      v_salary_old := rec.salary;
-      v_salary := round(nvl(p_salary, rec.salary * entEMPLOYEES.С_EMP_SALARY_PAYRISE_KOEFF), 2);
-        
-      if v_salary > entEMPLOYEES.С_EMP_MAX_SALARY then
-        RAISE_APPLICATION_ERROR(-20102, utl_lms.format_message(EX_PAYRISE_EMP_SALARY_EXCCESS_MSG, to_char(p_employee_id)));
-      end if;
-
-      -- Получаем сотрудника
-      tabEMPLOYEES.sel(p_id => p_employee_id, p_row => v_row);
-
-      -- Обновляем данные
-      v_row.salary       := v_salary;
-      tabEMPLOYEES.upd(p_row => v_row);
-
-      -- Отправляем почту руководителю сотрудника
-      if rec.mgr_addr is not null then
-          
-        v_message := utl_lms.format_message(
-           entEMPLOYEES.C_MSG_PAYRISE_MGR_TXT
-           --'Уважаемый %s %s! Вашему сотруднику %s %s увеличен оклад с %s до %s.'
-           , TO_CHAR(rec.mgr_first_name)
-           , TO_CHAR(rec.mgr_last_name)
-           , TO_CHAR(rec.first_name)
-           , TO_CHAR(rec.last_name)
-           , TO_CHAR(v_salary_old)
-           , TO_CHAR(v_salary)
-         );
-         
-        entEMPLOYEES.message_ins(
-            p_msg_text  => v_message
-           ,p_msg_type  => p_msg_type
-           ,p_dest_addr => rec.mgr_addr);
-      end if;
+    -- Получаем данные сотрудника 
+    tabEMPLOYEES.SEL(p_id   => p_employee_id,
+                     p_row  => v_row);
+                     
+    -- Должность сотрудника                 
+    tabEMPLOYEES.JOB_SEL(p_job_id => v_row.job_id,
+                         p_row    => v_job,
+                         p_rase   => false);
+                       
+    -- Получаем данные руководителя
+    tabEMPLOYEES.SEL(p_id   => v_row.manager_id,
+                     p_row  => v_row_mgr);
+    
+    
+      case p_msg_type 
+        when tabEMPLOYEES.С_MSG_TYPE_EMAIL
+        then v_msg_addr := v_row_mgr.email;
+        else v_msg_addr := v_row_mgr.phone_number;
+      end case;
       
-    end loop;
+    
+    v_salary_old := v_row.salary;
+    v_salary := round(nvl(p_salary, v_row.salary * entEMPLOYEES.С_EMP_SALARY_PAYRISE_KOEFF), 2);
+        
+    if v_salary > entEMPLOYEES.С_EMP_MAX_SALARY then
+      RAISE_APPLICATION_ERROR(-20102, utl_lms.format_message(EX_PAYRISE_EMP_SALARY_EXCCESS_MSG, to_char(p_employee_id)));
+    end if;
+
+    -- Обновляем данные
+    v_row.salary := v_salary;
+    tabEMPLOYEES.UPD(p_row => v_row);
+
+    -- Отправляем почту руководителю сотрудника
+    if v_msg_addr is not null then
+          
+      v_message := utl_lms.format_message(
+         entEMPLOYEES.C_MSG_PAYRISE_MGR_TXT
+         --'Уважаемый %s %s! Вашему сотруднику %s %s увеличен оклад с %s до %s.'
+         , TO_CHAR(v_row_mgr.first_name)
+         , TO_CHAR(v_row_mgr.last_name)
+         , TO_CHAR(v_row.first_name)
+         , TO_CHAR(v_row.last_name)
+         , TO_CHAR(v_salary_old)
+         , TO_CHAR(v_salary)
+       );
+         
+      tabEMPLOYEES.MESSAGE_INS(
+          p_msg_text  => v_message
+         ,p_msg_type  => p_msg_type
+         ,p_dest_addr => v_msg_addr);
+         
+    end if;
+      
+    
   end PAYRISE; 
 
 
@@ -489,7 +394,7 @@ create or replace package body entEMPLOYEES is
   procedure LEAVE
   (
     p_employee_id            in employees.employee_id%type
-   ,p_msg_type               in messages.msg_type%type      := С_MSG_TYPE_EMAIL -- Тип сообщения для отправки sms / email
+   ,p_msg_type               in messages.msg_type%type      := tabEMPLOYEES.С_MSG_TYPE_EMAIL -- Тип сообщения для отправки sms / email
   )
   /*
     Процедура реализует увольнение сотрудника
@@ -503,42 +408,50 @@ create or replace package body entEMPLOYEES is
   /**/
   is
     v_row         employees%rowtype;
+    v_row_mgr    EMPLOYEES%rowtype;
+    v_job        JOBS%rowtype;
     v_message     messages.msg_text%type;
     v_mgr_addr     employees.email%type;
   begin
     
-    -- Получим сотрудника
-    for rec in (-- Получим тексты сообщений и, адрес руководителя
-                select decode(p_msg_type, С_MSG_TYPE_EMAIL, em.mgr_email, em.mgr_phone_number) as mgr_addr -- телефон или email руководителя
-                      ,em.*
-                  from VW_EMPLOYEES em
-                 where 1=1
-                   and em.employee_id = p_employee_id
-               )
-    loop
-      v_mgr_addr := rec.mgr_addr;
-      v_message := utl_lms.format_message(
-         entEMPLOYEES.C_MSG_LEAVE_MGR_TXT
-         --'Уважаемый %s %s! Из вашего подразделения уволен сотрудник %s %s с должности %s.'
-         , TO_CHAR(rec.mgr_first_name)
-         , TO_CHAR(rec.mgr_last_name)
-         , TO_CHAR(rec.first_name)
-         , TO_CHAR(rec.last_name)
-         , TO_CHAR(rec.job_title)
-       );
-    end loop;
     
-    -- Получаем сотрудника
-    tabEMPLOYEES.sel(p_id => p_employee_id, p_row => v_row);
-
+    -- Получаем данные сотрудника 
+    tabEMPLOYEES.SEL(p_id   => p_employee_id,
+                     p_row  => v_row);
+                     
+    -- Должность сотрудника                 
+    tabEMPLOYEES.JOB_SEL(p_job_id => v_row.job_id,
+                         p_row    => v_job,
+                         p_rase   => false);
+                       
+    -- Получаем данные руководителя
+    tabEMPLOYEES.SEL(p_id   => v_row.manager_id,
+                     p_row  => v_row_mgr);
+    
+    v_message := utl_lms.format_message(
+       entEMPLOYEES.C_MSG_LEAVE_MGR_TXT
+       --'Уважаемый %s %s! Из вашего подразделения уволен сотрудник %s %s с должности %s.'
+       , TO_CHAR(v_row_mgr.first_name)
+       , TO_CHAR(v_row_mgr.last_name)
+       , TO_CHAR(v_row.first_name)
+       , TO_CHAR(v_row.last_name)
+       , TO_CHAR(v_job.job_title)
+     );
+     
+    case p_msg_type 
+      when tabEMPLOYEES.С_MSG_TYPE_EMAIL
+      then v_mgr_addr := v_row_mgr.email;
+      else v_mgr_addr := v_row_mgr.phone_number;
+    end case;
+    
     -- Увольняем сотрудника
     -- Обновляем данные
     v_row.department_id       := null;
-    tabEMPLOYEES.upd(p_row => v_row);
+    tabEMPLOYEES.UPD(p_row => v_row);
     
     -- Отправляем почту руководителю сотрудника
     if v_mgr_addr is not null then
-      entEMPLOYEES.message_ins(
+      tabEMPLOYEES.MESSAGE_INS(
           p_msg_text  => v_message
          ,p_msg_type  => p_msg_type
          ,p_dest_addr => v_mgr_addr);

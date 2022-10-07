@@ -37,7 +37,7 @@ create or replace package body entEMPLOYEES_TEST is
       dbms_output.put_line('Create EMP'); --< Для отладки
       entEmployees.employment(p_first_name     => 'John',
                               p_last_name      => 'employment_t',
-                              p_email          => 'abc@def.com2',
+                              p_email          => 'abc3',
                               p_phone_number   => '+7804650',
                               p_job_id         => '',
                               p_department_id  => '',
@@ -50,7 +50,7 @@ create or replace package body entEMPLOYEES_TEST is
         into v_id
         from EMPLOYEES e
        where 1=1
-         and e.email = 'abc@def.com2'
+         and e.email = 'abc3'
       ;/**/
 
       tabEMPLOYEES.sel(p_id => v_id, p_row => v_row);
@@ -71,13 +71,13 @@ create or replace package body entEMPLOYEES_TEST is
   is
     v_id          EMPLOYEES.EMPLOYEE_ID%type;
     v_row         EMPLOYEES%rowtype;
-    v_msg_type    MESSAGES.msg_type%type := entEmployees.С_MSG_TYPE_DEF;
+    v_msg_type    MESSAGES.msg_type%type := tabEMPLOYEES.С_MSG_TYPE_DEF;
     v_dest_addr   MESSAGES.dest_addr%type;
     v_dest_addr2  MESSAGES.dest_addr%type;
   begin
     dbms_output.put_line('Создает сотрудника, со ссылкой на менеджера (отправит два сообщения на почту), оклад и процент не указаны (усредненные)'); --< Для отладки
 
-    v_dest_addr  := 'employment_t2@def.com';
+    v_dest_addr  := 'employment_t2';
     v_dest_addr2 := 'NGREENBE';
 
     dbms_output.put_line('Create EMP'); --< Для отладки
@@ -139,13 +139,13 @@ create or replace package body entEMPLOYEES_TEST is
   is
     v_id          EMPLOYEES.EMPLOYEE_ID%type;
     v_row         EMPLOYEES%rowtype;
-    v_msg_type    MESSAGES.msg_type%type := entEmployees.С_MSG_TYPE_DEF;
+    v_msg_type    MESSAGES.msg_type%type := tabEMPLOYEES.С_MSG_TYPE_DEF;
     v_dest_addr   MESSAGES.dest_addr%type;
     v_dest_addr2  MESSAGES.dest_addr%type;
   begin
     dbms_output.put_line('Создает сотрудника, без ссылки на менеджера (отправит только одно сообщение на почту), с фиксированным окладом'); --< Для отладки
 
-    v_dest_addr  := 'employment_t3@def.com';
+    v_dest_addr  := 'employment_t3';
     v_dest_addr2 := '';
 
     dbms_output.put_line('Create EMP'); --< Для отладки
@@ -207,14 +207,14 @@ create or replace package body entEMPLOYEES_TEST is
   is
     v_id          EMPLOYEES.EMPLOYEE_ID%type;
     v_row         EMPLOYEES%rowtype;
-    v_msg_type    MESSAGES.msg_type%type := entEmployees.С_MSG_TYPE_SMS;
+    v_msg_type    MESSAGES.msg_type%type := tabEMPLOYEES.С_MSG_TYPE_SMS;
     v_dest_addr   MESSAGES.dest_addr%type;
     v_dest_addr2  MESSAGES.dest_addr%type;
     v_dest_addr3  MESSAGES.dest_addr%type;
   begin
     dbms_output.put_line('Создает сотрудника со ссылкой на менеджера (отправит два сообщения SMS), с фиксированным окладом'); --< Для отладки
 
-    v_dest_addr  := 'employment_t4@def.com';
+    v_dest_addr  := 'employment_t4';
     v_dest_addr2 := '515.124.4569'; -- NGREENBE
     v_dest_addr3  := '+7804650';
 
@@ -267,42 +267,6 @@ create or replace package body entEMPLOYEES_TEST is
       dbms_output.put_line('  rec.p_msg_text = ' || rec.msg_text);
       dbms_output.put_line('  rec.msg_type  = ' || rec.msg_type);
       dbms_output.put_line('  rec.msg_state  = ' || rec.msg_state);
-    end loop; -- Конец перебора
-
-  end;
-  
-  
-  ---------------------------------------------------------------
-  procedure MESSAGE_INS_T
-  -- Создаем сообщение в очереди
-  is
-    v_msg_type  MESSAGES.msg_type%type  := 'sms';
-    v_dest_addr MESSAGES.dest_addr%type := 'abc@def.com3';
-  begin
-
-    entEMPLOYEES.message_ins(
-        p_msg_text  => 'Уважаемый Neena Kochhar! В ваше подразделение принят новый сотрудник Nancy Greenberg в должности Finance Manager с окладом 12008.'
-       ,p_msg_type  => v_msg_type
-       ,p_dest_addr => v_dest_addr);
-
-    -- Найдем сообщение
-    dbms_output.put_line('Find messages...'); --< Для отладки 
-    for rec in (--
-                select m2.*
-                  from MESSAGES m2
-                 where 1=1
-                   and m2.id in (--
-                                select max(m.id)
-                                  from MESSAGES m
-                                 where 1=1
-                                   and m.msg_type = v_msg_type
-                                   and m.dest_addr = v_dest_addr
-                       )
-               )
-    loop
-      dbms_output.put_line('id = ' || rec.id);
-      dbms_output.put_line('rec.p_msg_text = ' || rec.msg_text);
-      dbms_output.put_line('rec.msg_state  = ' || rec.msg_state);
     end loop; -- Конец перебора
 
   end;
@@ -478,10 +442,6 @@ create or replace package body entEMPLOYEES_TEST is
   begin
     begin
       -- exception block
-
-      dbms_output.put_line('');
-      dbms_output.put_line('Тест - MESSAGE_INS_T');
-      MESSAGE_INS_T;
 
       dbms_output.put_line('');
       dbms_output.put_line('Тест - EMPLOYMENT_T');

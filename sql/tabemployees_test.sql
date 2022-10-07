@@ -88,7 +88,7 @@ create or replace package body tabEMPLOYEES_TEST is
     --v_row.employee_id := EMPLOYEES_SEQ.nextval;
     v_row.first_name      := 'John';
     v_row.last_name       := 'Connor';
-    v_row.email           := 'abc@def.com';
+    v_row.email           := 'abc';
     v_row.phone_number    := '+79502096411';
     v_row.hire_date       := trunc(sysdate);
     v_row.job_id          := 'FI_MGR';
@@ -174,7 +174,7 @@ create or replace package body tabEMPLOYEES_TEST is
     v_row.employee_id := EMPLOYEES_SEQ.nextval;
     v_row.first_name      := 'John';
     v_row.last_name       := 'Connor2';
-    v_row.email           := 'abc2@def.com';
+    v_row.email           := 'abc2';
     v_row.phone_number    := '+79502096411';
     v_row.hire_date       := trunc(sysdate);
     v_row.job_id          := 'FI_MGR';
@@ -197,6 +197,40 @@ create or replace package body tabEMPLOYEES_TEST is
   end;
 
 
+  ---------------------------------------------------------------
+  procedure MESSAGE_INS_T
+  -- Создаем сообщение в очереди
+  is
+    v_msg_type  MESSAGES.msg_type%type  := 'sms';
+    v_dest_addr MESSAGES.dest_addr%type := 'message_ins_t';
+  begin
+
+    tabEMPLOYEES.MESSAGE_INS(
+        p_msg_text  => 'Уважаемый Neena Kochhar! В ваше подразделение принят новый сотрудник Nancy Greenberg в должности Finance Manager с окладом 12008.'
+       ,p_msg_type  => v_msg_type
+       ,p_dest_addr => v_dest_addr);
+
+    -- Найдем сообщение
+    dbms_output.put_line('Find messages...'); --< Для отладки 
+    for rec in (--
+                select m2.*
+                  from MESSAGES m2
+                 where 1=1
+                   and m2.id in (--
+                                select max(m.id)
+                                  from MESSAGES m
+                                 where 1=1
+                                   and m.msg_type = v_msg_type
+                                   and m.dest_addr = v_dest_addr
+                       )
+               )
+    loop
+      dbms_output.put_line('id = ' || rec.id);
+      dbms_output.put_line('rec.p_msg_text = ' || rec.msg_text);
+      dbms_output.put_line('rec.msg_state  = ' || rec.msg_state);
+    end loop; -- Конец перебора
+
+  end;
 
   ---------------------------------------------------------------
   procedure runall
@@ -234,6 +268,10 @@ create or replace package body tabEMPLOYEES_TEST is
       dbms_output.put_line('');
       dbms_output.put_line('Тест - DEL_T');
       DEL_T;
+
+      dbms_output.put_line('');
+      dbms_output.put_line('Тест - MESSAGE_INS_T');
+      MESSAGE_INS_T;
 
     exception
       when others then
