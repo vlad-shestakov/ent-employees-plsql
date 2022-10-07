@@ -43,7 +43,7 @@ create or replace package body tabEMPLOYEES_TEST is
     tabEMPLOYEES.sel(p_id        => v_id
                     ,p_row       => v_row
                     ,p_forUpdate => v_forUpdate
-                    ,p_rase      => v_rase);
+                    ,p_raise     => v_rase);
 
     dbms_output.put_line('v_row.employee_id = ' || v_row.employee_id);
     dbms_output.put_line('v_row.last_name = ' || v_row.last_name);
@@ -240,10 +240,17 @@ create or replace package body tabEMPLOYEES_TEST is
     begin
       -- exception block
 
+      dbms_output.put_line('');
+      dbms_output.put_line('Тест - SEL_T');
+      SEL_T;
 
       dbms_output.put_line('');
       dbms_output.put_line('Тест - INS_T2');
       INS_T2;
+
+      dbms_output.put_line('');
+      dbms_output.put_line('Тест - INS_T');
+      INS_T;
 
       dbms_output.put_line('');
       dbms_output.put_line('Тест - EXIST_T');
@@ -254,16 +261,8 @@ create or replace package body tabEMPLOYEES_TEST is
       EXIST_T2;
 
       dbms_output.put_line('');
-      dbms_output.put_line('Тест - SEL_T');
-      SEL_T;
-
-      dbms_output.put_line('');
       dbms_output.put_line('Тест - UPD_T');
       UPD_T;
-
-      dbms_output.put_line('');
-      dbms_output.put_line('Тест - INS_T');
-      INS_T;
 
       dbms_output.put_line('');
       dbms_output.put_line('Тест - DEL_T');

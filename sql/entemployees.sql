@@ -62,9 +62,9 @@ create or replace package entEMPLOYEES is
    ,p_job_id                 in employees.job_id%type
    ,p_department_id          in employees.department_id%type
    ,p_manager_id             in employees.manager_id%type
-   ,p_salary                 in employees.salary%type
-   ,p_commission_pct         in employees.commission_pct%type
-   ,p_msg_type               in messages.msg_type%type := tabEMPLOYEES.С_MSG_TYPE_EMAIL -- Тип сообщения для отправки sms / email
+   ,p_salary                 in employees.salary%type         default null
+   ,p_commission_pct         in employees.commission_pct%type default null
+   ,p_msg_type               in messages.msg_type%type        default tabEMPLOYEES.С_MSG_TYPE_EMAIL -- Тип сообщения для отправки sms / email
   )
   /*
     Процедура реализует функционал приема на работу нового сотрудника.
@@ -145,9 +145,9 @@ create or replace package body entEMPLOYEES is
    ,p_job_id                 in employees.job_id%type
    ,p_department_id          in employees.department_id%type
    ,p_manager_id             in employees.manager_id%type
-   ,p_salary                 in employees.salary%type
-   ,p_commission_pct         in employees.commission_pct%type
-   ,p_msg_type               in messages.msg_type%type := tabEMPLOYEES.С_MSG_TYPE_EMAIL -- Тип сообщения для отправки sms / email
+   ,p_salary                 in employees.salary%type         default null
+   ,p_commission_pct         in employees.commission_pct%type default null
+   ,p_msg_type               in messages.msg_type%type        default tabEMPLOYEES.С_MSG_TYPE_EMAIL -- Тип сообщения для отправки sms / email
   )
   /*
     Процедура реализует функционал приема на работу нового сотрудника.
@@ -225,12 +225,12 @@ create or replace package body entEMPLOYEES is
     -- Должность сотрудника
     tabEMPLOYEES.JOB_SEL(p_job_id => v_row.job_id,
                          p_row    => v_job,
-                         p_rase   => false);
+                         p_raise  => false);
 
     -- Отдел сотрудника
     tabEMPLOYEES.DEPARTMENTS_SEL(p_department_id => v_row.department_id,
                                  p_row           => v_department,
-                                 p_rase          => false);
+                                 p_raise         => false);
 
     -- Получаем данные руководителя
     tabEMPLOYEES.SEL(p_id   => v_row.manager_id,
@@ -277,7 +277,7 @@ create or replace package body entEMPLOYEES is
       -- Должность руководителя
       tabEMPLOYEES.JOB_SEL(p_job_id => v_row_mgr.job_id,
                            p_row    => v_job_mgr,
-                           p_rase   => false);
+                           p_raise  => false);
 
       v_message := v_message || ' ' || utl_lms.format_message(
                              entEMPLOYEES.C_MSG_EMPLT_GREET_EMP_TXT2
@@ -340,7 +340,7 @@ create or replace package body entEMPLOYEES is
     -- Должность сотрудника
     tabEMPLOYEES.JOB_SEL(p_job_id => v_row.job_id,
                          p_row    => v_job,
-                         p_rase   => false);
+                         p_raise  => false);
 
     -- Получаем данные руководителя
     tabEMPLOYEES.SEL(p_id   => v_row.manager_id,
@@ -423,7 +423,7 @@ create or replace package body entEMPLOYEES is
     -- Должность сотрудника
     tabEMPLOYEES.JOB_SEL(p_job_id => v_row.job_id,
                          p_row    => v_job,
-                         p_rase   => false);
+                         p_raise  => false);
 
     -- Получаем данные руководителя
     tabEMPLOYEES.SEL(p_id   => v_row.manager_id,

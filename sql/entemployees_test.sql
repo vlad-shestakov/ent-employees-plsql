@@ -87,9 +87,10 @@ create or replace package body entEMPLOYEES_TEST is
                             p_phone_number   => '+7804650',
                             p_job_id         => 'SA_REP',
                             p_department_id  => 80,
-                            p_manager_id     => 108,
-                            p_salary         => '',
-                            p_commission_pct => '');
+                            p_manager_id     => 108
+                           --,p_salary         => ''
+                           --,p_commission_pct => ''
+                            );
 
     -- Найдем клиента
     select max(e.employee_id)
@@ -115,12 +116,13 @@ create or replace package body entEMPLOYEES_TEST is
                 select m2.*
                   from MESSAGES m2
                  where 1=1
-                   and m2.id in (--
-                                select max(m.id)
+                   and (m2.msg_type, m2.dest_addr, m2.id) in (--
+                                select m.msg_type, m.dest_addr, max(m.id)
                                   from MESSAGES m
                                  where 1=1
                                    and m.msg_type = v_msg_type
                                    and m.dest_addr in (v_dest_addr, v_dest_addr2)
+                                 group by m.msg_type, m.dest_addr
                        )
                )
     loop
@@ -183,12 +185,13 @@ create or replace package body entEMPLOYEES_TEST is
                 select m2.*
                   from MESSAGES m2
                  where 1=1
-                   and m2.id in (--
-                                select max(m.id)
+                   and (m2.msg_type, m2.dest_addr, m2.id) in (--
+                                select m.msg_type, m.dest_addr, max(m.id)
                                   from MESSAGES m
                                  where 1=1
                                    and m.msg_type = v_msg_type
                                    and m.dest_addr in (v_dest_addr, v_dest_addr2)
+                                 group by m.msg_type, m.dest_addr
                        )
                )
     loop
@@ -254,12 +257,13 @@ create or replace package body entEMPLOYEES_TEST is
                 select m2.*
                   from MESSAGES m2
                  where 1=1
-                   and m2.id in (--
-                                select max(m.id)
+                   and (m2.msg_type, m2.dest_addr, m2.id) in (--
+                                select m.msg_type, m.dest_addr, max(m.id)
                                   from MESSAGES m
                                  where 1=1
                                    and m.msg_type = v_msg_type
                                    and m.dest_addr in (v_dest_addr, v_dest_addr2, v_dest_addr3)
+                                 group by m.msg_type, m.dest_addr
                        )
                )
     loop
@@ -304,7 +308,7 @@ create or replace package body entEMPLOYEES_TEST is
     v_dest_addr MESSAGES.dest_addr%type    := 'NKOCHHAR';
   begin
 
-    dbms_output.put_line('Повышает оклад сотрудника, + 10%'); --< Для отладки
+    dbms_output.put_line('Повышает оклад сотрудника по-умолчанию (+10%)'); --< Для отладки
     dbms_output.put_line('Payrise EMP'); --< Для отладки
 
     tabEMPLOYEES.sel(p_id => v_id, p_row => v_row);
@@ -324,18 +328,19 @@ create or replace package body entEMPLOYEES_TEST is
                 select m2.*
                   from MESSAGES m2
                  where 1=1
-                   and m2.id in (--
-                                select max(m.id)
+                   and (m2.msg_type, m2.dest_addr, m2.id) in (--
+                                select m.msg_type, m.dest_addr, max(m.id)
                                   from MESSAGES m
                                  where 1=1
                                    and m.msg_type = v_msg_type
                                    and m.dest_addr = v_dest_addr
+                                 group by m.msg_type, m.dest_addr
                        )
                )
     loop
-      dbms_output.put_line('id = ' || rec.id);
-      dbms_output.put_line('rec.p_msg_text = ' || rec.msg_text);
-      dbms_output.put_line('rec.msg_state  = ' || rec.msg_state);
+      dbms_output.put_line('  id = ' || rec.id);
+      dbms_output.put_line('  rec.p_msg_text = ' || rec.msg_text);
+      dbms_output.put_line('  rec.msg_state  = ' || rec.msg_state);
     end loop; -- Конец перебора
 
   end;
@@ -350,7 +355,7 @@ create or replace package body entEMPLOYEES_TEST is
     v_dest_addr MESSAGES.dest_addr%type    := 'NKOCHHAR';
   begin
 
-    dbms_output.put_line('Повышает оклад сотрудника - 150 000 '); --< Для отладки
+    dbms_output.put_line('Повышает оклад сотрудника фиксировано - 150 000'); --< Для отладки
     dbms_output.put_line('Payrise EMP'); --< Для отладки
 
     tabEMPLOYEES.sel(p_id => v_id, p_row => v_row);
@@ -371,18 +376,19 @@ create or replace package body entEMPLOYEES_TEST is
                 select m2.*
                   from MESSAGES m2
                  where 1=1
-                   and m2.id in (--
-                                select max(m.id)
+                   and (m2.msg_type, m2.dest_addr, m2.id) in (--
+                                select m.msg_type, m.dest_addr, max(m.id)
                                   from MESSAGES m
                                  where 1=1
                                    and m.msg_type = v_msg_type
                                    and m.dest_addr = v_dest_addr
+                                 group by m.msg_type, m.dest_addr
                        )
                )
     loop
-      dbms_output.put_line('id = ' || rec.id);
-      dbms_output.put_line('rec.p_msg_text = ' || rec.msg_text);
-      dbms_output.put_line('rec.msg_state  = ' || rec.msg_state);
+      dbms_output.put_line('  id = ' || rec.id);
+      dbms_output.put_line('  rec.p_msg_text = ' || rec.msg_text);
+      dbms_output.put_line('  rec.msg_state  = ' || rec.msg_state);
     end loop; -- Конец перебора
 
 
@@ -418,18 +424,19 @@ create or replace package body entEMPLOYEES_TEST is
                 select m2.*
                   from MESSAGES m2
                  where 1=1
-                   and m2.id in (--
-                                select max(m.id)
+                   and (m2.msg_type, m2.dest_addr, m2.id) in (--
+                                select m.msg_type, m.dest_addr, max(m.id)
                                   from MESSAGES m
                                  where 1=1
                                    and m.msg_type = v_msg_type
                                    and m.dest_addr = v_dest_addr
+                                 group by m.msg_type, m.dest_addr
                        )
                )
     loop
-      dbms_output.put_line('id = ' || rec.id);
-      dbms_output.put_line('rec.p_msg_text = ' || rec.msg_text);
-      dbms_output.put_line('rec.msg_state  = ' || rec.msg_state);
+      dbms_output.put_line('  id = ' || rec.id);
+      dbms_output.put_line('  rec.p_msg_text = ' || rec.msg_text);
+      dbms_output.put_line('  rec.msg_state  = ' || rec.msg_state);
     end loop; -- Конец перебора
 
 
