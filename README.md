@@ -8,6 +8,7 @@
 ** Таблица EMPLOYEES - /sql/employees.tab
 ** Таблица MESSAGES - /sql/messages.tab
 ** Таблица EMPLOYEES - /sql/employees.tab
+** Вью VW_EMPLOYEES - /sql/vw_employees.vw
 ** Сиквенс MESSAGES_SEQ - /sql/messages_seq.seq
 ** Триггер TR_EMPLOYEES_BIU - /sql/tr_employees_biu.sql
 ** Триггер TR_MESSAGES_BI_SEQ - /sql/tr_messages_bi_seq.sql
