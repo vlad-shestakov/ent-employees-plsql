@@ -1,4 +1,4 @@
-﻿prompt PL/SQL Developer Export User Objects for user HR@169.254.218.131/XEPDB1
+﻿prompt PL/SQL Developer Export User Objects for user TST@169.254.218.131/XEPDB1
 prompt Created by User on 7 Октябрь 2022 г.
 set define off
 spool _ALL_SCHEMA_EXPORT.log
@@ -436,39 +436,39 @@ create or replace package entEMPLOYEES is
 
   -- Created : 07.10.2022 2:12:18
   -- Purpose : Обработка бизнес-логики объектов из таблицы EMPLOYEES
-  
+
   -- 07.10.2022 VSHESTAKOV - v01
 
-  --------------------------------------------------------------- 
+  ---------------------------------------------------------------
   -- КОНСТАНТЫ
-  
+
     -- Текст сообщения для нового работника
     C_GREETING_EMP_TEXT constant messages.msg_text%type :=  'Уважаемый %s %s! Вы приняты в качестве %s в подразделение %s.';
     C_GREETING_EMP_TEXT2 constant messages.msg_text%type :=  'Ваш руководитель: %s %s %s.';
-    -- Уважаемый < FIRST_NAME > < LAST_NAME >! Вы приняты в качестве < JOB_TITLE > в подразделение < DEPARTMENT_NAME >. 
+    -- Уважаемый < FIRST_NAME > < LAST_NAME >! Вы приняты в качестве < JOB_TITLE > в подразделение < DEPARTMENT_NAME >.
     -- Ваш руководитель: < JOB_TITLE > < FIRST_NAME > < LAST_NAME >”.
 
     -- Текст сообщения для руководителя нового работника
     C_GREETING_MGR_TEXT constant messages.msg_text%type :=  'Уважаемый %s %s! В ваше подразделение принят новый сотрудник %s %s в должности %s с окладом %s.';
     -- Уважаемый < FIRST_NAME > < LAST_NAME >! В ваше подразделение принят новый сотрудник < FIRST_NAME > < LAST_NAME > в должности < JOB_TITLE > с окладом < SALARY >.
-    
-    С_MSG_TYPE_EMAIL   CONSTANT messages.msg_type%type := 'email'; 
-    С_MSG_TYPE_SMS   CONSTANT messages.msg_type%type := 'sms'; 
+
+    С_MSG_TYPE_EMAIL   CONSTANT messages.msg_type%type := 'email';
+    С_MSG_TYPE_SMS   CONSTANT messages.msg_type%type := 'sms';
     С_MSG_TYPE_DEF   CONSTANT messages.msg_type%type := С_MSG_TYPE_EMAIL
     -- Тип отправляемого сообщения по-умолчанию
-    ; 
-    
+    ;
+
   ---------------------------------------------------------------
   -- ОШИБКИ
-  
+
     -- Ошибка  -20101 Не заполнены обязательные параметры (%s)
     EX_EMPLOYMENT_WR_PARAMS     exception;
     EX_EMPLOYMENT_WR_PARAMS_MSG constant varchar2(400) := 'Не заполнены обязательные параметры (%s)';
     pragma exception_init(EX_EMPLOYMENT_WR_PARAMS, -20101);
-    
-    
-    
-  --------------------------------------------------------------- 
+
+
+
+  ---------------------------------------------------------------
   function GET_GREETING_MGR_TEXT
   (
     p_id  in employees.employee_id%type
@@ -476,47 +476,47 @@ create or replace package entEMPLOYEES is
   return messages.msg_text%type
   /*
     Возвращяет текст сообщения для руководителя работника
-    
+
     ПАРАМЕТРЫ
       p_id - Код сотрудника
   /**/
   ;
-  
-  --------------------------------------------------------------- 
+
+  ---------------------------------------------------------------
   function GET_GREETING_EMP_TEXT
   (
     p_id  in employees.employee_id%type
   )
   return messages.msg_text%type
-  /* 
+  /*
     Возвращяет текст сообщения для работника
-    
+
     ПАРАМЕТРЫ
       p_id - Код сотрудника
   /**/
   ;
-  
-  --------------------------------------------------------------- 
+
+  ---------------------------------------------------------------
   procedure MESSAGE_INS
   (
     p_row    in MESSAGES%rowtype
    ,p_update in boolean := false
   )
-  /* 
-    Выполняет вставку новой строки MESSAGES 
+  /*
+    Выполняет вставку новой строки MESSAGES
     Перегрузка по строке
-    
+
     ПАРАМЕТРЫ
       p_row        - Данные вставляемой записи MESSAGES
       p_update
-        true       - если строка с таким индексом уже существует, выполняется обновление данных. 
+        true       - если строка с таким индексом уже существует, выполняется обновление данных.
     ИСКЛЮЧЕНИЯ
         исключения при дублировании строк и нарушении других ограничений, наложенных на таблицу.
   /**/
   ;
-  
-  
-  --------------------------------------------------------------- 
+
+
+  ---------------------------------------------------------------
   procedure MESSAGE_INS
   (
     p_msg_text  in messages.msg_text%type
@@ -525,21 +525,21 @@ create or replace package entEMPLOYEES is
    ,p_msg_state in messages.msg_state%type := 0
    ,p_update    in boolean := false
   )
-  /* 
-    Выполняет вставку новой строки MESSAGES 
+  /*
+    Выполняет вставку новой строки MESSAGES
     Перегрузка по фактическим полям
-    
+
     ПАРАМЕТРЫ
-      p_msg_text   - текст сообщения 
-     ,p_dest_addr  - адрес получателя сообщения (email, номер телефона) 
-     ,p_msg_type   - тип сообщения (email, sms и т.п.) 
-     ,p_msg_state  - статус обработки сообщения внешней системой (0 - добавлено в очередь, 1 - успешно отправлено, -1 - отправлено с ошибкой) 
-     ,p_update     
-        true       - если строка с таким индексом уже существует, выполняется обновление данных. 
+      p_msg_text   - текст сообщения
+     ,p_dest_addr  - адрес получателя сообщения (email, номер телефона)
+     ,p_msg_type   - тип сообщения (email, sms и т.п.)
+     ,p_msg_state  - статус обработки сообщения внешней системой (0 - добавлено в очередь, 1 - успешно отправлено, -1 - отправлено с ошибкой)
+     ,p_update
+        true       - если строка с таким индексом уже существует, выполняется обновление данных.
   /**/
   ;
-  
-  --------------------------------------------------------------- 
+
+  ---------------------------------------------------------------
   procedure EMPLOYMENT
   (
     p_first_name             in employees.first_name%type
@@ -553,26 +553,26 @@ create or replace package entEMPLOYEES is
    ,p_commission_pct         in employees.commission_pct%type
    ,p_msg_type               in messages.msg_type%type := С_MSG_TYPE_EMAIL -- Тип сообщения для отправки sms / email
   )
-  /* 
+  /*
     Процедура реализует функционал приема на работу нового сотрудника.
     - Расчитывает оклад, если не указан
     - Добавляет запись в EMPLOYEES
     - Создает сообщения типа P_MSG_TYPE (email) в таблице MESSAGES для работника и его руководителя (если указан)
-    
+
     ПАРАМЕТРЫ
        p_first_name       - Поля карточки EMPLOYEES
-      ,p_last_name            
-      ,p_email                
-      ,p_phone_number         
-      ,p_job_id               
+      ,p_last_name
+      ,p_email
+      ,p_phone_number
+      ,p_job_id
       ,p_department_id
       ,p_manager_id
       ,p_salary           - не обязательны для заполнения
-      ,p_commission_pct     Если они пустые, при добавлении записи эти данные заполняются средними значениями 
+      ,p_commission_pct     Если они пустые, при добавлении записи эти данные заполняются средними значениями
                             по подразделению и штатной должности (JOB_ID, DEPARTMENT_ID)
       ,p_msg_type         - Тип сообщения для отправки sms / email
-                         
-    ИСКЛЮЧЕНИЯ     
+
+    ИСКЛЮЧЕНИЯ
       исключения при нарушении ограничений на данные таблицы.
   /**/
   ;
@@ -593,15 +593,15 @@ create or replace package entEMPLOYEES_TEST is
 
   -- 07.10.2022 VSHESTAKOV - v01
 
-  /* 
+  /*
   begin
     rollback;
     -- Выполнить все тесты
     entEMPLOYEES_TEST.runall;
-  end; 
+  end;
   /**/
 
-  --------------------------------------------------------------- 
+  ---------------------------------------------------------------
   procedure runall
   -- Все тесты
   ;
@@ -617,11 +617,11 @@ create or replace package tabEMPLOYEES is
 
   -- Author  : VSHESTAKOV
   -- Created : 06.10.2022 17:15:18
-  -- Purpose : Обработка операций чтения/записи данных в таблицу EMPLOYEES 
+  -- Purpose : Обработка операций чтения/записи данных в таблицу EMPLOYEES
 
   -- 07.10.2022 USER - v01
 
-  --------------------------------------------------------------- 
+  ---------------------------------------------------------------
   procedure sel
   (
     p_id        in EMPLOYEES.EMPLOYEE_ID%type
@@ -629,50 +629,50 @@ create or replace package tabEMPLOYEES is
    ,p_forUpdate in boolean := false
    ,p_rase      in boolean := true
   )
-  /* 
-    Процедура выполняет извлечение записи по ключу из таблицы EMPLOYEES 
-    
+  /*
+    Процедура выполняет извлечение записи по ключу из таблицы EMPLOYEES
+
     ПАРАМЕТРЫ
       p_id         - Код записи для таблицы EMPLOYEES
       p_row        - Возвращаемая запись EMPLOYEES
       p_forUpdate
         true     - выполняется SELECT … FOR UPDATE
-        false    - обычный SELECT 
-      p_rase 
+        false    - обычный SELECT
+      p_rase
         true     - происходит вызов исключений
-        false    - исключения игнорируются 
-    
+        false    - исключения игнорируются
+
     /**/
   ;
 
-  --------------------------------------------------------------- 
+  ---------------------------------------------------------------
   procedure ins
   (
     p_row    in EMPLOYEES%rowtype
    ,p_update in boolean := false
   )
-  /* 
-    Выполняет вставку новой строки EMPLOYEES 
-    
+  /*
+    Выполняет вставку новой строки EMPLOYEES
+
     ПАРАМЕТРЫ
       p_row        - Данные вставляемой записи EMPLOYEES
       p_update
-        true       - если строка с таким индексом уже существует, выполняется обновление данных. 
+        true       - если строка с таким индексом уже существует, выполняется обновление данных.
     ИСКЛЮЧЕНИЯ
         исключения при дублировании строк и нарушении других ограничений, наложенных на таблицу.
     /**/
   ;
 
 
-  --------------------------------------------------------------- 
+  ---------------------------------------------------------------
   procedure upd
   (
     p_row    in EMPLOYEES%rowtype
    ,p_insert in boolean := false
   )
-  /* 
-    Процедура выполняет обновление данных в строке (кроме первичного ключа) EMPLOYEES 
-    
+  /*
+    Процедура выполняет обновление данных в строке (кроме первичного ключа) EMPLOYEES
+
     ПАРАМЕТРЫ
       p_row        - Данные записи EMPLOYEES
       p_insert
@@ -681,34 +681,34 @@ create or replace package tabEMPLOYEES is
         исключения при дублировании строк и нарушении других ограничений, наложенных на таблицу.
     /**/
   ;
-  
-  --------------------------------------------------------------- 
+
+  ---------------------------------------------------------------
   procedure del
   (
     p_id in EMPLOYEES.employee_id%type
   )
-  /* 
+  /*
     Процедура выполняет удаление строки данных EMPLOYEES
-    
+
     ПАРАМЕТРЫ
       p_id         - Код записи для таблицы EMPLOYEES
     /**/
   ;
-  
-  --------------------------------------------------------------- 
+
+  ---------------------------------------------------------------
   function exist
   (
     p_id in EMPLOYEES.employee_id%type
   )
-  return boolean 
-  /* 
+  return boolean
+  /*
     Функция возвращает истину, если строка с указанным ключом существует в таблице EMPLOYEES
-    
+
     ПАРАМЕТРЫ
       p_id         - Код записи для таблицы EMPLOYEES
     /**/
   ;
-  
+
 end tabEMPLOYEES;
 /
 
@@ -725,15 +725,15 @@ create or replace package tabEMPLOYEES_TEST is
 
   -- 07.10.2022 VSHESTAKOV - v01
 
-  /* 
+  /*
   begin
     rollback;
     -- Выполнить все тесты
     tabEMPLOYEES_TEST.runall;
-  end; 
+  end;
   /**/
 
-  --------------------------------------------------------------- 
+  ---------------------------------------------------------------
   procedure runall
   -- Все тесты
   ;
@@ -781,7 +781,7 @@ prompt ==================================
 prompt
 create or replace package body entEMPLOYEES is
 
-  --------------------------------------------------------------- 
+  ---------------------------------------------------------------
   -- Данные о сотруднике и его руководителе
   cursor CUR_EMPLOYEE(c_employee_id in employees.employee_id%type) is
     select em.employee_id
@@ -805,15 +805,15 @@ create or replace package body entEMPLOYEES is
         on jmg.job_id = em.job_id
      where 1=1
        and em.employee_id = C_EMPLOYEE_ID;
-  
-  ---------------------------------------------------------------    
+
+  ---------------------------------------------------------------
   -- Cредние зарплаты, комиссии по отделу и должности
   cursor CUR_AVG_DEPT_SALARY(
     c_department_id in employees.department_id%type
    ,c_job_id        in employees.job_id%type
-  ) 
+  )
   is
-    select distinct 
+    select distinct
            em.department_id
           ,em.job_id
           ,round(avg(em.salary) over ( partition by em.department_id, em.job_id), 2) as avg_dept_salary -- Средняя зарплата сотрудника по отделу
@@ -822,18 +822,18 @@ create or replace package body entEMPLOYEES is
        where 1=1
          and em.department_id = C_DEPARTMENT_ID
          and em.job_id = C_JOB_ID
-    ;/**/ 
-    
-    
-  --------------------------------------------------------------- 
+    ;/**/
+
+
+  ---------------------------------------------------------------
   function GET_GREETING_MGR_TEXT
   (
     p_id  in employees.employee_id%type
   )
   return messages.msg_text%type
-  /* 
+  /*
     Возвращяет текст сообщения для руководителя работника
-    
+
     ПАРАМЕТРЫ
       p_id - Код сотрудника
   /**/
@@ -841,7 +841,7 @@ create or replace package body entEMPLOYEES is
     v_res messages.msg_text%type;
   begin
     for rec in CUR_EMPLOYEE(p_id)
-    loop 
+    loop
       v_res := utl_lms.format_message(
          entEMPLOYEES.C_GREETING_MGR_TEXT
          --'Уважаемый %s %s! В ваше подразделение принят новый сотрудник %s %s в должности %s с окладом %s'
@@ -852,19 +852,19 @@ create or replace package body entEMPLOYEES is
          , TO_CHAR(rec.job_title)
          , TO_CHAR(rec.salary)
        );
-    end loop; 
+    end loop;
     return v_res;
-  end;   
-  
-  --------------------------------------------------------------- 
+  end;
+
+  ---------------------------------------------------------------
   function GET_GREETING_EMP_TEXT
   (
     p_id  in employees.employee_id%type
   )
   return messages.msg_text%type
-  /* 
+  /*
     Возвращяет текст сообщения для работника
-    
+
     ПАРАМЕТРЫ
       p_id - Код сотрудника
   /**/
@@ -872,7 +872,7 @@ create or replace package body entEMPLOYEES is
     v_res messages.msg_text%type;
   begin
     for rec in CUR_EMPLOYEE(p_id)
-    loop 
+    loop
       v_res := utl_lms.format_message(
          entEMPLOYEES.C_GREETING_EMP_TEXT
          --'Уважаемый %s %s! Вы приняты в качестве %s в подразделение %s.'
@@ -881,9 +881,9 @@ create or replace package body entEMPLOYEES is
          , TO_CHAR(rec.job_title)
          , TO_CHAR(rec.department_name)
        );
-       
+
        -- Если есть руководитель, ссылка на него
-       if rec.mgr_last_name is not null then  
+       if rec.mgr_last_name is not null then
          v_res := v_res || ' ' || utl_lms.format_message(
            entEMPLOYEES.C_GREETING_EMP_TEXT2
            --'Ваш руководитель: %s %s %s.'
@@ -892,26 +892,26 @@ create or replace package body entEMPLOYEES is
            , TO_CHAR(rec.mgr_last_name)
          );
        end if;
-    
-    end loop; 
+
+    end loop;
     return v_res;
   end;
-  
-  
-  --------------------------------------------------------------- 
+
+
+  ---------------------------------------------------------------
   procedure MESSAGE_INS
   (
     p_row    in MESSAGES%rowtype
    ,p_update in boolean := false
   )
-  /* 
-    Выполняет вставку новой строки MESSAGES 
+  /*
+    Выполняет вставку новой строки MESSAGES
     Перегрузка по строке
-    
+
     ПАРАМЕТРЫ
       p_row        - Данные вставляемой записи MESSAGES
       p_update
-        true       - если строка с таким индексом уже существует, выполняется обновление данных. 
+        true       - если строка с таким индексом уже существует, выполняется обновление данных.
     ИСКЛЮЧЕНИЯ
         исключения при дублировании строк и нарушении других ограничений, наложенных на таблицу.
     /**/
@@ -923,7 +923,7 @@ create or replace package body entEMPLOYEES is
       values p_row;
     exception
       when dup_val_on_index then
-        -- Если не удалось по дублю 
+        -- Если не удалось по дублю
         -- пробуем обновить
         if p_update then
           update MESSAGES m
@@ -934,8 +934,8 @@ create or replace package body entEMPLOYEES is
         end if;
     end;
   end message_ins;
-  
-  --------------------------------------------------------------- 
+
+  ---------------------------------------------------------------
   procedure MESSAGE_INS
   (
     p_msg_text  in messages.msg_text%type
@@ -944,32 +944,32 @@ create or replace package body entEMPLOYEES is
    ,p_msg_state in messages.msg_state%type := 0
    ,p_update    in boolean := false
   )
-  /* 
-    Выполняет вставку новой строки MESSAGES 
+  /*
+    Выполняет вставку новой строки MESSAGES
     Перегрузка по фактическим полям
-    
+
     ПАРАМЕТРЫ
-      p_msg_text   - текст сообщения 
-     ,p_dest_addr  - адрес получателя сообщения (email, номер телефона) 
-     ,p_msg_type   - тип сообщения (email, sms и т.п.) 
-     ,p_msg_state  - статус обработки сообщения внешней системой (0 - добавлено в очередь, 1 - успешно отправлено, -1 - отправлено с ошибкой) 
-     ,p_update     
-        true       - если строка с таким индексом уже существует, выполняется обновление данных. 
+      p_msg_text   - текст сообщения
+     ,p_dest_addr  - адрес получателя сообщения (email, номер телефона)
+     ,p_msg_type   - тип сообщения (email, sms и т.п.)
+     ,p_msg_state  - статус обработки сообщения внешней системой (0 - добавлено в очередь, 1 - успешно отправлено, -1 - отправлено с ошибкой)
+     ,p_update
+        true       - если строка с таким индексом уже существует, выполняется обновление данных.
   /**/
   is
     v_row    MESSAGES%rowtype;
   begin
-    
+
     v_row.msg_text  := p_msg_text;
     v_row.msg_type  := p_msg_type;
     v_row.dest_addr := p_dest_addr;
     v_row.msg_state := p_msg_state;
-    
+
     message_ins(p_row => v_row, p_update => p_update);
-                
+
   end message_ins;
-  
-  --------------------------------------------------------------- 
+
+  ---------------------------------------------------------------
   procedure EMPLOYMENT
   (
     p_first_name             in employees.first_name%type
@@ -983,26 +983,26 @@ create or replace package body entEMPLOYEES is
    ,p_commission_pct         in employees.commission_pct%type
    ,p_msg_type               in messages.msg_type%type := С_MSG_TYPE_EMAIL -- Тип сообщения для отправки sms / email
   )
-  /* 
+  /*
     Процедура реализует функционал приема на работу нового сотрудника.
     - Расчитывает оклад, если не указан
     - Добавляет запись в EMPLOYEES
     - Создает сообщения типа P_MSG_TYPE (email) в таблице MESSAGES для работника и его руководителя (если указан)
-    
+
     ПАРАМЕТРЫ
        p_first_name       - Поля карточки EMPLOYEES
-      ,p_last_name            
-      ,p_email                
-      ,p_phone_number         
-      ,p_job_id               
+      ,p_last_name
+      ,p_email
+      ,p_phone_number
+      ,p_job_id
       ,p_department_id
       ,p_manager_id
       ,p_salary           - не обязательны для заполнения
-      ,p_commission_pct     Если они пустые, при добавлении записи эти данные заполняются средними значениями 
+      ,p_commission_pct     Если они пустые, при добавлении записи эти данные заполняются средними значениями
                             по подразделению и штатной должности (JOB_ID, DEPARTMENT_ID)
       ,p_msg_type         - Тип сообщения для отправки sms / email
-                         
-    ИСКЛЮЧЕНИЯ     
+
+    ИСКЛЮЧЕНИЯ
       исключения при нарушении ограничений на данные таблицы.
   /**/
   is
@@ -1013,17 +1013,17 @@ create or replace package body entEMPLOYEES is
     v_mgr_addr   messages.dest_addr%type;
     v_emp_addr   messages.dest_addr%type;
   begin
-    
+
     -- Проверка на обязательные параметры
-    select ltrim(decode(p_department_id, null, 'p_department_id') 
+    select ltrim(decode(p_department_id, null, 'p_department_id')
            || ', ' || decode(p_job_id, null, 'p_job_id')
-           , ', ') 
+           , ', ')
       into v_err
       from dual;
-    if v_err is not null then 
-      RAISE_APPLICATION_ERROR(-20101, utl_lms.format_message(EX_EMPLOYMENT_WR_PARAMS_MSG, v_err)); 
+    if v_err is not null then
+      RAISE_APPLICATION_ERROR(-20101, utl_lms.format_message(EX_EMPLOYMENT_WR_PARAMS_MSG, v_err));
     end if;
-    
+
     v_row.employee_id     := EMPLOYEES_SEQ.Nextval;
     v_row.first_name      := p_first_name;
     v_row.last_name       := p_last_name;
@@ -1035,21 +1035,21 @@ create or replace package body entEMPLOYEES is
     v_row.manager_id      := p_manager_id;
     v_row.salary          := p_salary;
     v_row.commission_pct  := p_commission_pct;
-    
-    
+
+
     -- Если не заполнен размер зп или комиссии
-    if p_salary is null or p_commission_pct is null then 
+    if p_salary is null or p_commission_pct is null then
       -- Получим размер зп, или комиссии из среднего по отделу и должности
       for rec in CUR_AVG_DEPT_SALARY(p_department_id, p_job_id)
-      loop 
+      loop
         v_row.salary          := nvl(p_salary, rec.avg_dept_salary);
         v_row.commission_pct  := nvl(p_commission_pct, rec.avg_dept_commission_pct);
-      end loop; 
+      end loop;
     end if;
-    
+
     -- Создаем сотрудика
     tabEMPLOYEES.ins(p_row => v_row);
-    
+
     -- Получим тексты сообщений и, адрес руководителя и сотрудника
     select entEMPLOYEES.get_greeting_emp_text(v_row.employee_id) as emp_msg
           ,entEMPLOYEES.get_greeting_mgr_text(v_row.employee_id) as mgr_msg
@@ -1061,26 +1061,26 @@ create or replace package body entEMPLOYEES is
         on em.employee_id = v_row.employee_id
       left join EMPLOYEES emg
         on emg.employee_id = em.manager_id;
-    
-    dbms_output.put_line('  v_mgr_addr = ' || v_mgr_addr); --< Для отладки 
-    dbms_output.put_line('  v_emp_addr = ' || v_emp_addr); --< Для отладки 
-    
-    if v_mgr_addr is not null then 
+
+    dbms_output.put_line('  v_mgr_addr = ' || v_mgr_addr); --< Для отладки
+    dbms_output.put_line('  v_emp_addr = ' || v_emp_addr); --< Для отладки
+
+    if v_mgr_addr is not null then
       -- Отправляем почту руководителю сотрудника
       entEMPLOYEES.message_ins(
           p_msg_text  => v_mgr_msg
          ,p_msg_type  => p_msg_type
          ,p_dest_addr => v_mgr_addr);
     end if;
-    
+
     -- Отправляем почту новому сотруднику
     entEMPLOYEES.message_ins(
         p_msg_text  => v_emp_msg
        ,p_msg_type  => p_msg_type
        ,p_dest_addr => v_emp_addr);
-       
-  end EMPLOYMENT; 
-  
+
+  end EMPLOYMENT;
+
 end entEMPLOYEES;
 /
 
@@ -1090,7 +1090,7 @@ prompt =======================================
 prompt
 create or replace package body entEMPLOYEES_TEST is
 
-  --------------------------------------------------------------- 
+  ---------------------------------------------------------------
   procedure MSG_T
   -- Сообщения для работника, начальника
   is
@@ -1098,32 +1098,32 @@ create or replace package body entEMPLOYEES_TEST is
     v_emp_msg messages.msg_text%type;
     v_mgr_msg messages.msg_text%type;
   begin
-    dbms_output.put_line('Тест сообщений для работника и начальника'); --< Для отладки 
-    
+    dbms_output.put_line('Тест сообщений для работника и начальника'); --< Для отладки
+
     select entEMPLOYEES.get_greeting_emp_text(v_id) as emp_msg
           ,entEMPLOYEES.get_greeting_mgr_text(v_id) as mgr_msg
       into v_emp_msg, v_mgr_msg
       from dual;
-  
+
     dbms_output.put_line('v_emp_msg = ' || v_emp_msg);
     dbms_output.put_line('C_GREETING_EMP_TEXT = ' || entEMPLOYEES.C_GREETING_EMP_TEXT);
     dbms_output.put_line('C_GREETING_EMP_TEXT2 = ' || entEMPLOYEES.C_GREETING_EMP_TEXT2);
-    
+
     dbms_output.put_line('');
     dbms_output.put_line('v_mgr_msg = ' || v_mgr_msg);
     dbms_output.put_line('C_GREETING_MGR_TEXT = ' || entEMPLOYEES.C_GREETING_MGR_TEXT);
   end;
 
-  --------------------------------------------------------------- 
+  ---------------------------------------------------------------
   procedure EMPLOYMENT_T
   -- Создаем сотрудника с ошибкой
   is
     v_id  EMPLOYEES.EMPLOYEE_ID%type;
     v_row EMPLOYEES%rowtype;
   begin
-    dbms_output.put_line('Создает сотрудника, возвращает ошибку, не указана должность и департамент'); --< Для отладки 
+    dbms_output.put_line('Создает сотрудника, возвращает ошибку, не указана должность и департамент'); --< Для отладки
     begin -- exception block
-      dbms_output.put_line('Create EMP'); --< Для отладки 
+      dbms_output.put_line('Create EMP'); --< Для отладки
       entEmployees.employment(p_first_name     => 'John',
                               p_last_name      => 'employment_t',
                               p_email          => 'abc@def.com2',
@@ -1133,28 +1133,28 @@ create or replace package body entEMPLOYEES_TEST is
                               p_manager_id     => '',
                               p_salary         => '',
                               p_commission_pct => '');
-     
+
       -- Найдем клиента
       select max(e.employee_id)
         into v_id
         from EMPLOYEES e
        where 1=1
          and e.email = 'abc@def.com2'
-      ;/**/                         
-  
+      ;/**/
+
       tabEMPLOYEES.sel(p_id => v_id, p_row => v_row);
-      
+
       dbms_output.put_line('v_id = ' || v_id);
       dbms_output.put_line('v_row.last_name = ' || v_row.last_name);
       dbms_output.put_line('v_row.email = ' || v_row.email);
-      
+
     exception
       when entEMPLOYEES.EX_EMPLOYMENT_WR_PARAMS then
         dbms_output.put_line(utl_lms.format_message('OK ERROR - (%s): %s',TO_CHAR(sqlcode),TO_CHAR(sqlerrm)));
-    end; 
+    end;
   end;
 
-  --------------------------------------------------------------- 
+  ---------------------------------------------------------------
   procedure EMPLOYMENT_T2
   -- Создаем сотрудника
   is
@@ -1164,12 +1164,12 @@ create or replace package body entEMPLOYEES_TEST is
     v_dest_addr   MESSAGES.dest_addr%type;
     v_dest_addr2  MESSAGES.dest_addr%type;
   begin
-    dbms_output.put_line('Создает сотрудника, со ссылкой на менеджера (отправит два сообщения на почту), оклад и процент не указаны (усредненные)'); --< Для отладки 
-    
+    dbms_output.put_line('Создает сотрудника, со ссылкой на менеджера (отправит два сообщения на почту), оклад и процент не указаны (усредненные)'); --< Для отладки
+
     v_dest_addr  := 'employment_t2@def.com';
     v_dest_addr2 := 'NGREENBE';
-    
-    dbms_output.put_line('Create EMP'); --< Для отладки 
+
+    dbms_output.put_line('Create EMP'); --< Для отладки
     entEmployees.employment(p_first_name     => 'John',
                             p_last_name      => 'employment_t2',
                             p_email          => v_dest_addr,
@@ -1179,27 +1179,27 @@ create or replace package body entEMPLOYEES_TEST is
                             p_manager_id     => 108,
                             p_salary         => '',
                             p_commission_pct => '');
-     
+
     -- Найдем клиента
     select max(e.employee_id)
       into v_id
       from EMPLOYEES e
      where 1=1
        and e.email = v_dest_addr
-    ;/**/                         
-  
+    ;/**/
+
     tabEMPLOYEES.sel(p_id => v_id, p_row => v_row);
-      
+
     dbms_output.put_line('v_id = ' || v_id);
     dbms_output.put_line('v_row.last_name = ' || v_row.last_name);
     dbms_output.put_line('v_row.email = ' || v_row.email);
     dbms_output.put_line('v_row.manager_id = ' || v_row.manager_id);
     dbms_output.put_line('v_row.salary = ' || v_row.salary);
     dbms_output.put_line('v_row.commission_pct = ' || v_row.commission_pct);
-    
-    
+
+
     -- Найдем сообщение
-    dbms_output.put_line('Find messages:'); --< Для отладки 
+    dbms_output.put_line('Find messages:'); --< Для отладки
     for rec in (--
                 select m.*
                   from MESSAGES m
@@ -1215,11 +1215,11 @@ create or replace package body entEMPLOYEES_TEST is
       dbms_output.put_line('  rec.msg_type  = ' || rec.msg_type);
       dbms_output.put_line('  rec.msg_state  = ' || rec.msg_state);
     end loop; -- Конец перебора
-      
+
   end;
-  
-  
-  --------------------------------------------------------------- 
+
+
+  ---------------------------------------------------------------
   procedure EMPLOYMENT_T3
   -- Создаем сотрудника
   is
@@ -1229,12 +1229,12 @@ create or replace package body entEMPLOYEES_TEST is
     v_dest_addr   MESSAGES.dest_addr%type;
     v_dest_addr2  MESSAGES.dest_addr%type;
   begin
-    dbms_output.put_line('Создает сотрудника, без ссылки на менеджера (отправит только одно сообщение на почту), с фиксированным окладом'); --< Для отладки 
-    
+    dbms_output.put_line('Создает сотрудника, без ссылки на менеджера (отправит только одно сообщение на почту), с фиксированным окладом'); --< Для отладки
+
     v_dest_addr  := 'employment_t3@def.com';
     v_dest_addr2 := '';
-    
-    dbms_output.put_line('Create EMP'); --< Для отладки 
+
+    dbms_output.put_line('Create EMP'); --< Для отладки
     entEmployees.employment(p_first_name     => 'John',
                             p_last_name      => 'employment_t3',
                             p_email          => v_dest_addr,
@@ -1244,27 +1244,27 @@ create or replace package body entEMPLOYEES_TEST is
                             p_manager_id     => null,
                             p_salary         => 110000,
                             p_commission_pct => 0.1);
-     
+
     -- Найдем клиента
     select max(e.employee_id)
       into v_id
       from EMPLOYEES e
      where 1=1
        and e.email = v_dest_addr
-    ;/**/                         
-  
+    ;/**/
+
     tabEMPLOYEES.sel(p_id => v_id, p_row => v_row);
-      
+
     dbms_output.put_line('v_id = ' || v_id);
     dbms_output.put_line('v_row.last_name = ' || v_row.last_name);
     dbms_output.put_line('v_row.email = ' || v_row.email);
     dbms_output.put_line('v_row.manager_id = ' || v_row.manager_id);
     dbms_output.put_line('v_row.salary = ' || v_row.salary);
     dbms_output.put_line('v_row.commission_pct = ' || v_row.commission_pct);
-    
-    
+
+
     -- Найдем сообщение
-    dbms_output.put_line('Find messages:'); --< Для отладки 
+    dbms_output.put_line('Find messages:'); --< Для отладки
     for rec in (--
                 select m.*
                   from MESSAGES m
@@ -1280,11 +1280,11 @@ create or replace package body entEMPLOYEES_TEST is
       dbms_output.put_line('  rec.msg_type  = ' || rec.msg_type);
       dbms_output.put_line('  rec.msg_state  = ' || rec.msg_state);
     end loop; -- Конец перебора
-      
+
   end;
 
 
-  --------------------------------------------------------------- 
+  ---------------------------------------------------------------
   procedure EMPLOYMENT_T4
   -- Создаем сотрудника
   is
@@ -1295,13 +1295,13 @@ create or replace package body entEMPLOYEES_TEST is
     v_dest_addr2  MESSAGES.dest_addr%type;
     v_dest_addr3  MESSAGES.dest_addr%type;
   begin
-    dbms_output.put_line('Создает сотрудника со ссылкой на менеджера (отправит два сообщения SMS), с фиксированным окладом'); --< Для отладки 
-    
+    dbms_output.put_line('Создает сотрудника со ссылкой на менеджера (отправит два сообщения SMS), с фиксированным окладом'); --< Для отладки
+
     v_dest_addr  := 'employment_t4@def.com';
     v_dest_addr2 := '515.124.4569'; -- NGREENBE
     v_dest_addr3  := '+7804650';
-    
-    dbms_output.put_line('Create EMP'); --< Для отладки 
+
+    dbms_output.put_line('Create EMP'); --< Для отладки
     entEmployees.employment(p_first_name     => 'John',
                             p_last_name      => 'employment_t4',
                             p_email          => v_dest_addr,
@@ -1312,27 +1312,27 @@ create or replace package body entEMPLOYEES_TEST is
                             p_salary         => 110000,
                             p_commission_pct => 0.1,
                             p_msg_type       => v_msg_type);
-     
+
     -- Найдем клиента
     select max(e.employee_id)
       into v_id
       from EMPLOYEES e
      where 1=1
        and e.email = v_dest_addr
-    ;/**/                         
-  
+    ;/**/
+
     tabEMPLOYEES.sel(p_id => v_id, p_row => v_row);
-      
+
     dbms_output.put_line('v_id = ' || v_id);
     dbms_output.put_line('v_row.last_name = ' || v_row.last_name);
     dbms_output.put_line('v_row.email = ' || v_row.email);
     dbms_output.put_line('v_row.manager_id = ' || v_row.manager_id);
     dbms_output.put_line('v_row.salary = ' || v_row.salary);
     dbms_output.put_line('v_row.commission_pct = ' || v_row.commission_pct);
-    
-    
+
+
     -- Найдем сообщение
-    dbms_output.put_line('Find messages:'); --< Для отладки 
+    dbms_output.put_line('Find messages:'); --< Для отладки
     for rec in (--
                 select m.*
                   from MESSAGES m
@@ -1348,23 +1348,23 @@ create or replace package body entEMPLOYEES_TEST is
       dbms_output.put_line('  rec.msg_type  = ' || rec.msg_type);
       dbms_output.put_line('  rec.msg_state  = ' || rec.msg_state);
     end loop; -- Конец перебора
-      
+
   end;
-  --------------------------------------------------------------- 
+  ---------------------------------------------------------------
   procedure MESSAGE_INS_T
   -- Создаем сообщение в очереди
   is
     v_msg_type  MESSAGES.msg_type%type;
     v_dest_addr MESSAGES.dest_addr%type;
-  begin                
+  begin
     v_msg_type := 'sms';
     v_dest_addr := 'abc@def.com3';
-    
+
     entEMPLOYEES.message_ins(
         p_msg_text  => 'Уважаемый Neena Kochhar! В ваше подразделение принят новый сотрудник Nancy Greenberg в должности Finance Manager с окладом 12008.'
        ,p_msg_type  => v_msg_type
        ,p_dest_addr => v_dest_addr);
-       
+
     -- Найдем сообщение
     for rec in (--
                 select m.*
@@ -1380,42 +1380,42 @@ create or replace package body entEMPLOYEES_TEST is
       dbms_output.put_line('rec.p_msg_text = ' || rec.msg_text);
       dbms_output.put_line('rec.msg_state  = ' || rec.msg_state);
     end loop; -- Конец перебора
-      
+
   end;
 
 
-  --------------------------------------------------------------- 
+  ---------------------------------------------------------------
   procedure runall
   -- Все тесты
    is
   begin
     begin
       -- exception block
-    
+
       dbms_output.put_line('');
       dbms_output.put_line('Тест - MSG_T');
       MSG_T;
-    
+
       dbms_output.put_line('');
       dbms_output.put_line('Тест - MESSAGE_INS_T');
       MESSAGE_INS_T;
-    
+
       dbms_output.put_line('');
       dbms_output.put_line('Тест - EMPLOYMENT_T');
       EMPLOYMENT_T;
-    
+
       dbms_output.put_line('');
       dbms_output.put_line('Тест - EMPLOYMENT_T2');
       EMPLOYMENT_T2;
-    
+
       dbms_output.put_line('');
       dbms_output.put_line('Тест - EMPLOYMENT_T3');
       EMPLOYMENT_T3;
-    
+
       dbms_output.put_line('');
       dbms_output.put_line('Тест - EMPLOYMENT_T4');
       EMPLOYMENT_T4;
-    
+
     exception
       when others then
         dbms_output.put_line(utl_lms.format_message('ERROR - (%s): %s'
@@ -1434,7 +1434,7 @@ prompt ==================================
 prompt
 create or replace package body tabEMPLOYEES is
 
-  --------------------------------------------------------------- 
+  ---------------------------------------------------------------
   procedure sel
   (
     p_id        in EMPLOYEES.EMPLOYEE_ID%type
@@ -1442,19 +1442,19 @@ create or replace package body tabEMPLOYEES is
    ,p_forUpdate in boolean := false
    ,p_rase      in boolean := true
   )
-  /* 
-    Процедура выполняет извлечение записи по ключу из таблицы EMPLOYEES 
-    
+  /*
+    Процедура выполняет извлечение записи по ключу из таблицы EMPLOYEES
+
     ПАРАМЕТРЫ
       p_id         - Код записи для таблицы EMPLOYEES
       p_row        - Возвращаемая запись EMPLOYEES
       p_forUpdate
           true     - выполняется SELECT … FOR UPDATE
-          false    - обычный SELECT 
-      p_rase 
+          false    - обычный SELECT
+      p_rase
           true     - происходит вызов исключений
-          false    - исключения игнорируются 
-     
+          false    - исключения игнорируются
+
     /**/
    is
     -- Выборка сотрудника для обновления
@@ -1462,29 +1462,29 @@ create or replace package body tabEMPLOYEES is
       select em.*
         from EMPLOYEES em
        where em.employee_id in c_employee_id;
-  
+
     -- Выборка сотрудника без обновления
     cursor CUR_EMPLOYEES_FU(c_employee_id in number) is
       select em.*
         from EMPLOYEES em
        where em.employee_id in c_employee_id
          for update;
-  
+
   begin
-  
+
     if p_forUpdate then
-    
+
       -- Выборка для обновления FOR UPDATE
       /*select *
        into p_row
        from EMPLOYEES em
       where em.employee_id in p_id for update; */
-    
+
       for rec in CUR_EMPLOYEES_FU(p_id)
       loop
         p_row := rec;
       end loop;
-    
+
     else
       -- Выборка без обновления
       for rec in CUR_EMPLOYEES(p_id)
@@ -1492,7 +1492,7 @@ create or replace package body tabEMPLOYEES is
         p_row := rec;
       end loop;
     end if;
-  
+
   exception
     when others then
       -- Если флаг обработки исключений включен - обрабатываем
@@ -1503,33 +1503,33 @@ create or replace package body tabEMPLOYEES is
   end;
 
 
-  --------------------------------------------------------------- 
+  ---------------------------------------------------------------
   procedure ins
   (
     p_row    in EMPLOYEES%rowtype
    ,p_update in boolean := false
   )
-  /* 
-    Выполняет вставку новой строки EMPLOYEES 
-    
+  /*
+    Выполняет вставку новой строки EMPLOYEES
+
     ПАРАМЕТРЫ
       p_row        - Данные вставляемой записи EMPLOYEES
       p_update
-        true       - если строка с таким индексом уже существует, выполняется обновление данных. 
+        true       - если строка с таким индексом уже существует, выполняется обновление данных.
     ИСКЛЮЧЕНИЯ
         исключения при дублировании строк и нарушении других ограничений, наложенных на таблицу.
     /**/
    is
   begin
-  
+
     -- Попытка добавить данные
     begin
       insert into EMPLOYEES
       values p_row;
     exception
       when dup_val_on_index then
-        --dbms_output.put_line('dup_val_on_index'); --< для отладки 
-        -- Если не удалось по дублю 
+        --dbms_output.put_line('dup_val_on_index'); --< для отладки
+        -- Если не удалось по дублю
         -- пробуем обновить
         if p_update then
           update EMPLOYEES emp
@@ -1542,15 +1542,15 @@ create or replace package body tabEMPLOYEES is
   end ins;
 
 
-  --------------------------------------------------------------- 
+  ---------------------------------------------------------------
   procedure upd
   (
     p_row    in EMPLOYEES%rowtype
    ,p_insert in boolean := false
   )
-  /* 
-    Процедура выполняет обновление данных в строке (кроме первичного ключа) EMPLOYEES 
-    
+  /*
+    Процедура выполняет обновление данных в строке (кроме первичного ключа) EMPLOYEES
+
     p_row        - Данные записи EMPLOYEES
     p_insert
         true     - если строка с таким индексом не существует, выполняется вставка новой строки.
@@ -1559,12 +1559,12 @@ create or replace package body tabEMPLOYEES is
     /**/
    is
   begin
-  
+
     -- Обновим данные
     update EMPLOYEES emp
        set row = p_row
      where emp.employee_id = p_row.employee_id;
-  
+
     -- Если режим вставки и не обновилось
     if p_insert
        and sql%rowcount = 0 then
@@ -1572,57 +1572,57 @@ create or replace package body tabEMPLOYEES is
       insert into EMPLOYEES
       values p_row;
     end if;
-  
+
   end upd;
-  
-  
-  --------------------------------------------------------------- 
+
+
+  ---------------------------------------------------------------
   procedure del
   (
     p_id in EMPLOYEES.employee_id%type
   )
-  /* 
+  /*
     Процедура выполняет удаление строки данных EMPLOYEES
-    
+
     ПАРАМЕТРЫ
       p_id         - Код записи для таблицы EMPLOYEES
   /**/
   is
   begin
-      
+
     delete from EMPLOYEES emp
      where emp.employee_id = p_id;
-  
+
   end del;
 
-  --------------------------------------------------------------- 
+  ---------------------------------------------------------------
   function exist
   (
     p_id in EMPLOYEES.employee_id%type
   )
-  return boolean 
-  /* 
+  return boolean
+  /*
     Функция возвращает истину, если строка с указанным ключом существует в таблице EMPLOYEES
-    
+
     ПАРАМЕТРЫ
       p_id         - Код записи для таблицы EMPLOYEES
     /**/
   is
     v_res number := 0;
   begin
-    select count(*) as cnt 
+    select count(*) as cnt
       into v_res
       from EMPLOYEES emp
      where emp.employee_id = p_id;
-    
+
     if v_res = 1 then
       return true;
-    else 
+    else
       return false;
     end if;
-    
+
   end exist;
-  
+
 end tabEMPLOYEES;
 /
 
@@ -1633,7 +1633,7 @@ prompt
 create or replace package body tabEMPLOYEES_TEST is
 
 
-  --------------------------------------------------------------- 
+  ---------------------------------------------------------------
   procedure SEL_T
   -- Выборка работника
    is
@@ -1642,56 +1642,56 @@ create or replace package body tabEMPLOYEES_TEST is
     v_forUpdate boolean := true;
     v_rase      boolean := true;
   begin
-    dbms_output.put_line('Выбор работника 108'); --< Для отладки 
-    
+    dbms_output.put_line('Выбор работника 108'); --< Для отладки
+
     v_id        := 108;
     v_rase      := true;
     v_forUpdate := false;
-  
+
     tabEMPLOYEES.sel(p_id        => v_id
                     ,p_row       => v_row
                     ,p_forUpdate => v_forUpdate
                     ,p_rase      => v_rase);
-  
+
     dbms_output.put_line('v_row.employee_id = ' || v_row.employee_id);
     dbms_output.put_line('v_row.last_name = ' || v_row.last_name);
-  
+
   end;
 
-  --------------------------------------------------------------- 
+  ---------------------------------------------------------------
   procedure INS_T
   -- Добавление карточки работника
    is
     v_id  EMPLOYEES.EMPLOYEE_ID%type;
     v_row EMPLOYEES%rowtype;
   begin
-    dbms_output.put_line('Вставка работника из копии'); --< Для отладки 
-    
+    dbms_output.put_line('Вставка работника из копии'); --< Для отладки
+
     v_id := 108;
-  
+
     tabEMPLOYEES.sel(p_id => v_id, p_row => v_row);
-  
+
     dbms_output.put_line('v_row.employee_id = ' || v_row.employee_id);
-  
+
     v_row.employee_id := EMPLOYEES_SEQ.nextval;
     v_row.email       := v_row.email || '_2';
-    
-    dbms_output.put_line('Inserting...'); --< Для отладки 
+
+    dbms_output.put_line('Inserting...'); --< Для отладки
     tabEMPLOYEES.ins(p_row => v_row, p_update => false);
-  
+
     dbms_output.put_line('v_row.employee_id = ' || v_row.employee_id);
     dbms_output.put_line('v_row.email = ' || v_row.email);
   end;
-  
-  
-  --------------------------------------------------------------- 
+
+
+  ---------------------------------------------------------------
   procedure INS_T2
   -- Добавление карточки работника 2
    is
     v_row EMPLOYEES%rowtype;
   begin
-    dbms_output.put_line('Вставка работника по данным'); --< Для отладки 
-    
+    dbms_output.put_line('Вставка работника по данным'); --< Для отладки
+
     --v_row.employee_id     := '';
     --v_row.employee_id := EMPLOYEES_SEQ.nextval;
     v_row.first_name      := 'John';
@@ -1704,81 +1704,81 @@ create or replace package body tabEMPLOYEES_TEST is
     v_row.commission_pct  := '';
     v_row.manager_id      := '101';
     v_row.department_id   := '100';
-    
+
     tabEMPLOYEES.ins(p_row => v_row, p_update => false);
-  
+
     dbms_output.put_line('v_row.employee_id = ' || v_row.employee_id);
     dbms_output.put_line('v_row.last_name = ' || v_row.last_name);
     dbms_output.put_line('v_row.email = ' || v_row.email);
   end;
 
-  --------------------------------------------------------------- 
+  ---------------------------------------------------------------
   procedure UPD_T
   -- обновление карточки работника
    is
     v_id  EMPLOYEES.EMPLOYEE_ID%type;
     v_row EMPLOYEES%rowtype;
   begin
-    dbms_output.put_line('Обновление карточки работника, ЗП + 10 000'); --< Для отладки 
-  
+    dbms_output.put_line('Обновление карточки работника, ЗП + 10 000'); --< Для отладки
+
     v_id := 108;
     tabEMPLOYEES.sel(p_id => v_id, p_row => v_row);
-  
+
     dbms_output.put_line('v_row.employee_id = ' || v_row.employee_id);
     dbms_output.put_line('v_row.last_name = ' || v_row.last_name);
     dbms_output.put_line('v_row.salary = ' || v_row.salary);
-  
+
     v_row.salary       := v_row.salary + 10000;
-    
-    dbms_output.put_line('Updating...'); --< Для отладки 
+
+    dbms_output.put_line('Updating...'); --< Для отладки
     tabEMPLOYEES.upd(p_row => v_row, p_insert => false);
-  
+
     dbms_output.put_line('v_row.employee_id = ' || v_row.employee_id);
     dbms_output.put_line('v_row.salary = ' || v_row.salary);
   end;
-  
-  
-  --------------------------------------------------------------- 
+
+
+  ---------------------------------------------------------------
   procedure EXIST_T
   -- Есть ли работник
    is
     v_id  EMPLOYEES.EMPLOYEE_ID%type;
     v_res boolean;
   begin
-    dbms_output.put_line('Проверка, есть ли работник - Есть'); --< Для отладки 
-  
+    dbms_output.put_line('Проверка, есть ли работник - Есть'); --< Для отладки
+
     v_id := 108;
     v_res := tabEMPLOYEES.exist(p_id => v_id);
-    
+
     dbms_output.put_line('v_id = ' || v_id);
     dbms_output.put_line('EMPLOYEE ' || case when v_res then 'exists' else 'not exists' end);
   end;
-  
-  --------------------------------------------------------------- 
+
+  ---------------------------------------------------------------
   procedure EXIST_T2
   -- Есть ли работник 2
    is
     v_id  EMPLOYEES.EMPLOYEE_ID%type;
     v_res boolean;
   begin
-    dbms_output.put_line('Проверка, есть ли работник - Нет'); --< Для отладки 
-  
+    dbms_output.put_line('Проверка, есть ли работник - Нет'); --< Для отладки
+
     v_id := -108;
     v_res := tabEMPLOYEES.exist(p_id => v_id);
-    
+
     dbms_output.put_line('v_id = ' || v_id);
     dbms_output.put_line('EMPLOYEE ' || case when v_res then 'exists' else 'not exists' end);
   end;
-  
-  
-  --------------------------------------------------------------- 
+
+
+  ---------------------------------------------------------------
   procedure DEL_T
   -- Удаление карточки работника
    is
     v_row EMPLOYEES%rowtype;
   begin
-    dbms_output.put_line('Удаление карточки работника'); --< Для отладки 
-    
+    dbms_output.put_line('Удаление карточки работника'); --< Для отладки
+
     v_row.employee_id := EMPLOYEES_SEQ.nextval;
     v_row.first_name      := 'John';
     v_row.last_name       := 'Connor2';
@@ -1790,59 +1790,59 @@ create or replace package body tabEMPLOYEES_TEST is
     v_row.commission_pct  := '';
     v_row.manager_id      := '101';
     v_row.department_id   := '100';
-    
+
     tabEMPLOYEES.ins(p_row => v_row, p_update => false);
-  
+
     dbms_output.put_line('v_row.employee_id = ' || v_row.employee_id);
     dbms_output.put_line('v_row.last_name = ' || v_row.last_name);
     dbms_output.put_line('v_row.email = ' || v_row.email);
-    
-    
+
+
     tabEMPLOYEES.del(p_id => v_row.employee_id);
     dbms_output.put_line('Deleting v_row.employee_id = ' || v_row.employee_id);
     dbms_output.put_line('EMPLOYEE ' || case when tabEMPLOYEES.exist(p_id => v_row.employee_id) then 'exists' else 'not exists' end);
-    
+
   end;
-  
-  
-  
-  --------------------------------------------------------------- 
+
+
+
+  ---------------------------------------------------------------
   procedure runall
   -- Все тесты
    is
   begin
     begin
       -- exception block
-      
-      
+
+
       dbms_output.put_line('');
       dbms_output.put_line('Тест - INS_T2');
       INS_T2;
-      
+
       dbms_output.put_line('');
       dbms_output.put_line('Тест - EXIST_T');
       EXIST_T;
-      
+
       dbms_output.put_line('');
       dbms_output.put_line('Тест - EXIST_T2');
       EXIST_T2;
-      
+
       dbms_output.put_line('');
       dbms_output.put_line('Тест - SEL_T');
       SEL_T;
-      
+
       dbms_output.put_line('');
       dbms_output.put_line('Тест - UPD_T');
       UPD_T;
-      
+
       dbms_output.put_line('');
       dbms_output.put_line('Тест - INS_T');
       INS_T;
-      
+
       dbms_output.put_line('');
       dbms_output.put_line('Тест - DEL_T');
       DEL_T;
-      
+
     exception
       when others then
         dbms_output.put_line(utl_lms.format_message('ERROR - (%s): %s'
@@ -1877,16 +1877,16 @@ create or replace trigger TR_EMPLOYEES_BIU
 begin
   -- Обновление полей
   if INSERTING then
-    
-    if :new.employee_id is null then 
+
+    if :new.employee_id is null then
       :new.employee_id := EMPLOYEES_SEQ.nextval;
     end if;
     :new.upd_counter := 0;
     :new.crt_user := upper(sys_context('USERENV', 'SESSION_USER'));
     :new.crt_date := sysdate;
-    
+
   elsif UPDATING then
-    
+
     :new.upd_user := upper(sys_context('USERENV', 'SESSION_USER'));
     :new.upd_date := sysdate;
   end if;
@@ -1900,7 +1900,7 @@ prompt ===================================
 prompt
 create or replace trigger TR_MESSAGES_BI_SEQ
   before insert
-  on messages 
+  on messages
   for each row
 declare
   -- local variables here
@@ -1922,7 +1922,7 @@ BEGIN
   /*add_job_history(:old.employee_id, :old.hire_date, sysdate,
                   :old.job_id, :old.department_id);
                   /**/
-  null;                  
+  null;
 END;
 /
 
