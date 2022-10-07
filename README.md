@@ -6,9 +6,10 @@
   
 |             Объекты БД        |                                              |                        |
 |-------------------------------|------------------------------------------------------------------------|--------------------------|
-| Задача          | [_TASK.md                       ](./_TASK.md                    )|                          |
+| Задача          | [_TASK.md                       ](./_TASK.md                    )|                          |                |
 | Запросы по проекту      | <a href="./SqlLog Запросы по проекту PLSQL_ENT_EMPLOYEES.sql">SqlLog Запросы по проекту PLSQL_ENT_EMPLOYEES.sql</a>|  |
 | Скрипт тестирования пакетов     | <a href="./TestLog Тестирование пакетов PLSQL_ENT_EMPLOYEES.sql">TestLog Тестирование пакетов PLSQL_ENT_EMPLOYEES.sql</a>|  |
+| Результат тестирования          | <a href="./TestLog Результат тестирования PLSQL_ENT_EMPLOYEES.sql">TestLog Результат тестирования PLSQL_ENT_EMPLOYEES.sql</a>|          
 | Объекты БД          | [sql/                       ](./sql/                      )|                          |
 | Объекты схемы         | [sql/_ALL_SCHEMA_EXPORT.sql     ](./sql/_ALL_SCHEMA_EXPORT.sql    )| Все объекты схемы        |
 | Данные схемы          | [sql/_ALL_SCHEMA_DATA.sql     ](./sql/_ALL_SCHEMA_DATA.sql    )| Все данные схемы         |
@@ -31,5 +32,8 @@
 
 ## Задача
 
-
 - [_TASK.md                       ](./_TASK.md                    )
+
+## Результат тестирования
+
+- <a href="./TestLog Результат тестирования PLSQL_ENT_EMPLOYEES.sql">TestLog Результат тестирования PLSQL_ENT_EMPLOYEES.sql</a>
