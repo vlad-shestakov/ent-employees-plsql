@@ -7,34 +7,17 @@ begin
   rollback;
   -- Все тесты
   tabEMPLOYEES_TEST.runall;
-  -- Выполнить все тесты
   entEMPLOYEES_TEST.runall;
 end; 
 /
---------------------------------------------------------------- 
-begin
-  rollback;
-  -- Все тесты
-  tabEMPLOYEES_TEST.runall;
-end; 
-
-/
-
-
-begin
-  rollback;
-  -- Выполнить все тесты
-  entEMPLOYEES_TEST.runall;
-end; 
 
 --------------------------------------------------------------- 
 /
-select *
-  from MESSAGES
- where 1=1
+select t.*, rowid
+  from MESSAGES t
+ where 1 = 1
  order by 1 desc
 ;/**/ 
-
 
 select *
   from EMPLOYEES

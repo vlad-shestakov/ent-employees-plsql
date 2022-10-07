@@ -172,41 +172,26 @@ create or replace package body entEMPLOYEES is
       исключения при нарушении ограничений на данные таблицы.
   /**/
   is
-  
-      
-      -- Cредние зарплаты, комиссии по отделу и должности
-      cursor CUR_AVG_DEPT_SALARY(
-        c_department_id in employees.department_id%type
-       ,c_job_id        in employees.job_id%type
-      )
-      is
-        select distinct
-               em.department_id
-              ,em.job_id
-              ,round(avg(em.salary) over ( partition by em.department_id, em.job_id), 2) as avg_dept_salary -- Средняя зарплата сотрудника по отделу
-              ,round(avg(em.commission_pct) over ( partition by em.department_id, em.job_id), 2) as avg_dept_commission_pct -- Средняя комиссия сотрудника по отделу
-            from EMPLOYEES em
-           where 1=1
-             and em.department_id = C_DEPARTMENT_ID
-             and em.job_id = C_JOB_ID
-        ;/**/
         
     v_row        EMPLOYEES%rowtype;
     v_row_mgr    EMPLOYEES%rowtype;
     v_job        JOBS%rowtype;
     v_job_mgr    JOBS%rowtype;
     v_department DEPARTMENTS%rowtype;
-    v_err        varchar2(250);
+    v_err        varchar2(250) := '';
     v_message    messages.msg_text%type;
     v_msg_addr   messages.dest_addr%type;
   begin
 
     -- Проверка на обязательные параметры
-    select ltrim(decode(p_department_id, null, 'p_department_id')
-           || ', ' || decode(p_job_id, null, 'p_job_id')
-           , ', ')
-      into v_err
-      from dual;
+    if p_department_id is null then 
+       v_err := 'p_department_id';
+    end if;
+    if p_department_id is null then 
+       v_err := v_err || ', p_job_id';
+    end if;
+    v_err := ltrim(v_err, ', ');
+    
     if v_err is not null then
       RAISE_APPLICATION_ERROR(-20101, utl_lms.format_message(EX_EMPLOYMENT_WR_PARAMS_MSG, v_err));
     end if;
@@ -227,7 +212,7 @@ create or replace package body entEMPLOYEES is
     -- Если не заполнен размер зп или комиссии
     if p_salary is null or p_commission_pct is null then
       -- Получим размер зп, или комиссии из среднего по отделу и должности
-      for rec in CUR_AVG_DEPT_SALARY(p_department_id, p_job_id)
+      for rec in tabEMPLOYEES.CUR_AVG_DEPT_SALARY(p_department_id, p_job_id)
       loop
         v_row.salary          := nvl(p_salary, rec.avg_dept_salary);
         v_row.commission_pct  := nvl(p_commission_pct, rec.avg_dept_commission_pct);
@@ -342,53 +327,66 @@ create or replace package body entEMPLOYEES is
     v_salary_old  employees.salary%type;
     v_salary      employees.salary%type;
     v_row         employees%rowtype;
+    v_row_mgr     employees%rowtype;
+    v_job         jobs%rowtype;
     v_message     messages.msg_text%type;
+    v_msg_addr    messages.dest_addr%type;
   begin
     
-    -- Получим сотрудника
-    for rec in (-- Получим тексты сообщений и, адрес руководителя и сотрудника
-                select decode(p_msg_type, tabEMPLOYEES.С_MSG_TYPE_EMAIL, em.mgr_email, em.mgr_phone_number) as mgr_addr -- телефон или email руководителя
-                      ,em.*
-                  from VW_EMPLOYEES em
-                 where 1=1
-                   and em.employee_id = p_employee_id
-               )
-    loop
-      v_salary_old := rec.salary;
-      v_salary := round(nvl(p_salary, rec.salary * entEMPLOYEES.С_EMP_SALARY_PAYRISE_KOEFF), 2);
-        
-      if v_salary > entEMPLOYEES.С_EMP_MAX_SALARY then
-        RAISE_APPLICATION_ERROR(-20102, utl_lms.format_message(EX_PAYRISE_EMP_SALARY_EXCCESS_MSG, to_char(p_employee_id)));
-      end if;
-
-      -- Получаем сотрудника
-      tabEMPLOYEES.SEL(p_id => p_employee_id, p_row => v_row);
-
-      -- Обновляем данные
-      v_row.salary := v_salary;
-      tabEMPLOYEES.UPD(p_row => v_row);
-
-      -- Отправляем почту руководителю сотрудника
-      if rec.mgr_addr is not null then
-          
-        v_message := utl_lms.format_message(
-           entEMPLOYEES.C_MSG_PAYRISE_MGR_TXT
-           --'Уважаемый %s %s! Вашему сотруднику %s %s увеличен оклад с %s до %s.'
-           , TO_CHAR(rec.mgr_first_name)
-           , TO_CHAR(rec.mgr_last_name)
-           , TO_CHAR(rec.first_name)
-           , TO_CHAR(rec.last_name)
-           , TO_CHAR(v_salary_old)
-           , TO_CHAR(v_salary)
-         );
-         
-        tabEMPLOYEES.MESSAGE_INS(
-            p_msg_text  => v_message
-           ,p_msg_type  => p_msg_type
-           ,p_dest_addr => rec.mgr_addr);
-      end if;
+    -- Получаем данные сотрудника 
+    tabEMPLOYEES.SEL(p_id   => p_employee_id,
+                     p_row  => v_row);
+                     
+    -- Должность сотрудника                 
+    tabEMPLOYEES.JOB_SEL(p_job_id => v_row.job_id,
+                         p_row    => v_job,
+                         p_rase   => false);
+                       
+    -- Получаем данные руководителя
+    tabEMPLOYEES.SEL(p_id   => v_row.manager_id,
+                     p_row  => v_row_mgr);
+    
+    
+      case p_msg_type 
+        when tabEMPLOYEES.С_MSG_TYPE_EMAIL
+        then v_msg_addr := v_row_mgr.email;
+        else v_msg_addr := v_row_mgr.phone_number;
+      end case;
       
-    end loop;
+    
+    v_salary_old := v_row.salary;
+    v_salary := round(nvl(p_salary, v_row.salary * entEMPLOYEES.С_EMP_SALARY_PAYRISE_KOEFF), 2);
+        
+    if v_salary > entEMPLOYEES.С_EMP_MAX_SALARY then
+      RAISE_APPLICATION_ERROR(-20102, utl_lms.format_message(EX_PAYRISE_EMP_SALARY_EXCCESS_MSG, to_char(p_employee_id)));
+    end if;
+
+    -- Обновляем данные
+    v_row.salary := v_salary;
+    tabEMPLOYEES.UPD(p_row => v_row);
+
+    -- Отправляем почту руководителю сотрудника
+    if v_msg_addr is not null then
+          
+      v_message := utl_lms.format_message(
+         entEMPLOYEES.C_MSG_PAYRISE_MGR_TXT
+         --'Уважаемый %s %s! Вашему сотруднику %s %s увеличен оклад с %s до %s.'
+         , TO_CHAR(v_row_mgr.first_name)
+         , TO_CHAR(v_row_mgr.last_name)
+         , TO_CHAR(v_row.first_name)
+         , TO_CHAR(v_row.last_name)
+         , TO_CHAR(v_salary_old)
+         , TO_CHAR(v_salary)
+       );
+         
+      tabEMPLOYEES.MESSAGE_INS(
+          p_msg_text  => v_message
+         ,p_msg_type  => p_msg_type
+         ,p_dest_addr => v_msg_addr);
+         
+    end if;
+      
+    
   end PAYRISE; 
 
 
@@ -410,34 +408,42 @@ create or replace package body entEMPLOYEES is
   /**/
   is
     v_row         employees%rowtype;
+    v_row_mgr    EMPLOYEES%rowtype;
+    v_job        JOBS%rowtype;
     v_message     messages.msg_text%type;
     v_mgr_addr     employees.email%type;
   begin
     
-    -- Получим сотрудника
-    for rec in (-- Получим тексты сообщений и, адрес руководителя
-                select decode(p_msg_type, tabEMPLOYEES.С_MSG_TYPE_EMAIL, em.mgr_email, em.mgr_phone_number) as mgr_addr -- телефон или email руководителя
-                      ,em.*
-                  from VW_EMPLOYEES em
-                 where 1=1
-                   and em.employee_id = p_employee_id
-               )
-    loop
-      v_mgr_addr := rec.mgr_addr;
-      v_message := utl_lms.format_message(
-         entEMPLOYEES.C_MSG_LEAVE_MGR_TXT
-         --'Уважаемый %s %s! Из вашего подразделения уволен сотрудник %s %s с должности %s.'
-         , TO_CHAR(rec.mgr_first_name)
-         , TO_CHAR(rec.mgr_last_name)
-         , TO_CHAR(rec.first_name)
-         , TO_CHAR(rec.last_name)
-         , TO_CHAR(rec.job_title)
-       );
-    end loop;
     
-    -- Получаем сотрудника
-    tabEMPLOYEES.SEL(p_id => p_employee_id, p_row => v_row);
-
+    -- Получаем данные сотрудника 
+    tabEMPLOYEES.SEL(p_id   => p_employee_id,
+                     p_row  => v_row);
+                     
+    -- Должность сотрудника                 
+    tabEMPLOYEES.JOB_SEL(p_job_id => v_row.job_id,
+                         p_row    => v_job,
+                         p_rase   => false);
+                       
+    -- Получаем данные руководителя
+    tabEMPLOYEES.SEL(p_id   => v_row.manager_id,
+                     p_row  => v_row_mgr);
+    
+    v_message := utl_lms.format_message(
+       entEMPLOYEES.C_MSG_LEAVE_MGR_TXT
+       --'Уважаемый %s %s! Из вашего подразделения уволен сотрудник %s %s с должности %s.'
+       , TO_CHAR(v_row_mgr.first_name)
+       , TO_CHAR(v_row_mgr.last_name)
+       , TO_CHAR(v_row.first_name)
+       , TO_CHAR(v_row.last_name)
+       , TO_CHAR(v_job.job_title)
+     );
+     
+    case p_msg_type 
+      when tabEMPLOYEES.С_MSG_TYPE_EMAIL
+      then v_mgr_addr := v_row_mgr.email;
+      else v_mgr_addr := v_row_mgr.phone_number;
+    end case;
+    
     -- Увольняем сотрудника
     -- Обновляем данные
     v_row.department_id       := null;

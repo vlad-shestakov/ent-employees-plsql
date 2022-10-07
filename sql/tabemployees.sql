@@ -15,6 +15,28 @@ create or replace package tabEMPLOYEES is
     -- Тип отправляемого сообщения по-умолчанию
     ;
     
+    
+  --------------------------------------------------------------- 
+  -- КУРСОРЫ
+  
+    
+    -- Cредние зарплаты, комиссии по отделу и должности
+    cursor CUR_AVG_DEPT_SALARY(
+      c_department_id in employees.department_id%type
+     ,c_job_id        in employees.job_id%type
+    )
+    is
+      select distinct
+             em.department_id
+            ,em.job_id
+            ,round(avg(em.salary) over ( partition by em.department_id, em.job_id), 2) as avg_dept_salary -- Средняя зарплата сотрудника по отделу
+            ,round(avg(em.commission_pct) over ( partition by em.department_id, em.job_id), 2) as avg_dept_commission_pct -- Средняя комиссия сотрудника по отделу
+          from EMPLOYEES em
+         where 1=1
+           and em.department_id = C_DEPARTMENT_ID
+           and em.job_id = C_JOB_ID
+    ;/**/
+    
   ---------------------------------------------------------------
   procedure JOB_SEL
   (
