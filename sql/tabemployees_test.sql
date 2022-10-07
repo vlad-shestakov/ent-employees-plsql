@@ -211,7 +211,7 @@ create or replace package body tabEMPLOYEES_TEST is
        ,p_dest_addr => v_dest_addr);
 
     -- Найдем сообщение
-    dbms_output.put_line('Find messages...'); --< Для отладки 
+    dbms_output.put_line('Find messages...'); --< Для отладки
     for rec in (--
                 select m2.*
                   from MESSAGES m2
