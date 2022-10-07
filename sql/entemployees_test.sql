@@ -71,7 +71,7 @@ create or replace package body entEMPLOYEES_TEST is
   is
     v_id          EMPLOYEES.EMPLOYEE_ID%type;
     v_row         EMPLOYEES%rowtype;
-    v_msg_type    MESSAGES.msg_type%type := entEmployees.С_MSG_TYPE_DEF;
+    v_msg_type    MESSAGES.msg_type%type := tabMESSAGES.С_MSG_TYPE_DEF;
     v_dest_addr   MESSAGES.dest_addr%type;
     v_dest_addr2  MESSAGES.dest_addr%type;
   begin
@@ -139,7 +139,7 @@ create or replace package body entEMPLOYEES_TEST is
   is
     v_id          EMPLOYEES.EMPLOYEE_ID%type;
     v_row         EMPLOYEES%rowtype;
-    v_msg_type    MESSAGES.msg_type%type := entEmployees.С_MSG_TYPE_DEF;
+    v_msg_type    MESSAGES.msg_type%type := tabMESSAGES.С_MSG_TYPE_DEF;
     v_dest_addr   MESSAGES.dest_addr%type;
     v_dest_addr2  MESSAGES.dest_addr%type;
   begin
@@ -207,7 +207,7 @@ create or replace package body entEMPLOYEES_TEST is
   is
     v_id          EMPLOYEES.EMPLOYEE_ID%type;
     v_row         EMPLOYEES%rowtype;
-    v_msg_type    MESSAGES.msg_type%type := entEmployees.С_MSG_TYPE_SMS;
+    v_msg_type    MESSAGES.msg_type%type := tabMESSAGES.С_MSG_TYPE_SMS;
     v_dest_addr   MESSAGES.dest_addr%type;
     v_dest_addr2  MESSAGES.dest_addr%type;
     v_dest_addr3  MESSAGES.dest_addr%type;
@@ -280,7 +280,7 @@ create or replace package body entEMPLOYEES_TEST is
     v_dest_addr MESSAGES.dest_addr%type := 'abc@def.com3';
   begin
 
-    entEMPLOYEES.message_ins(
+    tabMESSAGES.message_ins(
         p_msg_text  => 'Уважаемый Neena Kochhar! В ваше подразделение принят новый сотрудник Nancy Greenberg в должности Finance Manager с окладом 12008.'
        ,p_msg_type  => v_msg_type
        ,p_dest_addr => v_dest_addr);
