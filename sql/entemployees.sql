@@ -10,23 +10,22 @@ create or replace package entEMPLOYEES is
 
 
     С_EMP_MAX_SALARY   CONSTANT employees.salary%type := 350000
-    -- Максимальный оклад сотруднико
+    -- Максимальный оклад сотрудника
     ;
 
     -- Текст сообщения для нового работника
-    C_MSG_EMPLT_GREET_TEXT constant messages.msg_text%type :=  'Уважаемый %s %s! Вы приняты в качестве %s в подразделение %s.';
-    C_MSG_EMPLT_GREET_TEXT2 constant messages.msg_text%type :=  'Ваш руководитель: %s %s %s.';
+    C_MSG_EMPLT_GREET_EMP_TXT constant messages.msg_text%type :=  'Уважаемый %s %s! Вы приняты в качестве %s в подразделение %s.';
+    C_MSG_EMPLT_GREET_EMP_TXT2 constant messages.msg_text%type :=  'Ваш руководитель: %s %s %s.';
     -- Уважаемый < FIRST_NAME > < LAST_NAME >! Вы приняты в качестве < JOB_TITLE > в подразделение < DEPARTMENT_NAME >.
     -- Ваш руководитель: < JOB_TITLE > < FIRST_NAME > < LAST_NAME >”.
 
     -- Текст сообщения для руководителя нового работника
-    C_GREETING_MGR_TEXT constant messages.msg_text%type :=  'Уважаемый %s %s! В ваше подразделение принят новый сотрудник %s %s в должности %s с окладом %s.';
+    C_MSG_EMPLT_GREET_MGR_TXT constant messages.msg_text%type :=  'Уважаемый %s %s! В ваше подразделение принят новый сотрудник %s %s в должности %s с окладом %s.';
     -- Уважаемый < FIRST_NAME > < LAST_NAME >! В ваше подразделение принят новый сотрудник < FIRST_NAME > < LAST_NAME > в должности < JOB_TITLE > с окладом < SALARY >.
 
-
-/*
-“Уважаемый < FIRST_NAME > < LAST_NAME >! Вашему сотруднику < FIRST_NAME > < LAST_NAME > увеличен оклад с < SALARY old > до < SALARY new >”
-/**/
+    -- Текст сообщения. Повышение зп сотрудника для руководителя
+    C_MSG_PAYRISE_MGR_TXT constant messages.msg_text%type :=  'Уважаемый %s %s! Вашему сотруднику %s %s увеличен оклад с %s до %s.';
+    -- Уважаемый < FIRST_NAME > < LAST_NAME >! Вашему сотруднику < FIRST_NAME > < LAST_NAME > увеличен оклад с < SALARY old > до < SALARY new >.
 
     С_MSG_TYPE_EMAIL   CONSTANT messages.msg_type%type := 'email';
     С_MSG_TYPE_SMS   CONSTANT messages.msg_type%type := 'sms';
@@ -174,7 +173,6 @@ create or replace package entEMPLOYEES is
 
     ИСКЛЮЧЕНИЯ
       В случае превышения максимального оклада по должности (MAX_SALARY)
-
   /**/
   ;
 
@@ -244,7 +242,7 @@ create or replace package body entEMPLOYEES is
     for rec in CUR_EMPLOYEE(p_id)
     loop
       v_res := utl_lms.format_message(
-         entEMPLOYEES.C_GREETING_MGR_TEXT
+         entEMPLOYEES.C_MSG_EMPLT_GREET_MGR_TXT
          --'Уважаемый %s %s! В ваше подразделение принят новый сотрудник %s %s в должности %s с окладом %s'
          , TO_CHAR(rec.mgr_first_name)
          , TO_CHAR(rec.mgr_last_name)
@@ -275,7 +273,7 @@ create or replace package body entEMPLOYEES is
     for rec in CUR_EMPLOYEE(p_id)
     loop
       v_res := utl_lms.format_message(
-         entEMPLOYEES.C_MSG_EMPLT_GREET_TEXT
+         entEMPLOYEES.C_MSG_EMPLT_GREET_EMP_TXT
          --'Уважаемый %s %s! Вы приняты в качестве %s в подразделение %s.'
          , TO_CHAR(rec.first_name)
          , TO_CHAR(rec.last_name)
@@ -286,7 +284,7 @@ create or replace package body entEMPLOYEES is
        -- Если есть руководитель, ссылка на него
        if rec.mgr_last_name is not null then
          v_res := v_res || ' ' || utl_lms.format_message(
-           entEMPLOYEES.C_MSG_EMPLT_GREET_TEXT2
+           entEMPLOYEES.C_MSG_EMPLT_GREET_EMP_TXT2
            --'Ваш руководитель: %s %s %s.'
            , TO_CHAR(rec.mgr_job_title)
            , TO_CHAR(rec.mgr_first_name)
@@ -482,5 +480,29 @@ create or replace package body entEMPLOYEES is
 
   end EMPLOYMENT;
 
+
+  ---------------------------------------------------------------
+  procedure PAYRISE
+  (
+    p_employee_id            in employees.employee_id%type
+   ,p_salary                 in employees.salary%type
+  )
+  /*
+    Процедура реализует повышение оклада сотруднику
+
+    - Если SALARY пусто, необходимо повысить оклад на 10%
+    - Создать новое сообщение для руководителя сотрудника
+    ПАРАМЕТРЫ
+       p_employee_id      - Код сотрудника
+      ,p_salary           - Новый оклад (не обязательно)
+
+    ИСКЛЮЧЕНИЯ
+      В случае превышения максимального оклада по должности (MAX_SALARY)
+  /**/
+  is
+  begin
+    null;
+  end PAYRISE; 
+  
 end entEMPLOYEES;
 /

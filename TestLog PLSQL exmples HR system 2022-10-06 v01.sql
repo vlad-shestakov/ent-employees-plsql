@@ -7,6 +7,15 @@ begin
   rollback;
   -- Все тесты
   tabEMPLOYEES_TEST.runall;
+  -- Выполнить все тесты
+  entEMPLOYEES_TEST.runall;
+end; 
+/
+--------------------------------------------------------------- 
+begin
+  rollback;
+  -- Все тесты
+  tabEMPLOYEES_TEST.runall;
 end; 
 
 /
