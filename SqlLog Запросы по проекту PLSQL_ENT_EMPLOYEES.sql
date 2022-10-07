@@ -1,11 +1,4 @@
--- SqlLog PLSQL exmples HR system 2022-10-06 v01
----------------------------------------------------------------
-----        2022-10-09 PLSQL exmples HR system
----------------------------------------------------------------
-
--- D:\R_STUDIO\PRG\DB projects\2022-10-09 PLSQL exmples HR system\res\SqlLog PLSQL exmples HR system 2022-10-06 v01
-
----------------------------------------------------------------
+-- SqlLog Запросы по проекту PLSQL_ENT_EMPLOYEES
 
 ---------------------------------------------------------------
 -- Регионы
@@ -52,10 +45,10 @@ select *
  order by 1
 ;/**/ 
 
-select em.*
+select em.*, em.rowid
   from EMPLOYEES em
  where 1=1
-   and em.employee_id in 107
+   --and em.employee_id in 107
  order by 1
 ;/**/ 
 
@@ -115,9 +108,7 @@ select p.*
   from DUAL
  cross join Q_EMPLOYEE p -- Параметры запроса
 ;/**/ 
- order by 1
-;/**/ 
-v_msg := ;  
+
 /* 
   -- Текст сообщения для вновь принятого работника
   C_GREETING_EMP_TEXT constant messages.msg_text%type :=  'Уважаемый %s %s! Вы приняты в качестве %s в подразделение %s. Ваш руководитель: %s %s %s.';
@@ -262,3 +253,5 @@ select distinct
      and em.job_id = 'ST_CLERK'
     -- and em.employee_id in 107
 ;/**/ 
+
+
