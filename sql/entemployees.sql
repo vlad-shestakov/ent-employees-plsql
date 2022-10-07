@@ -192,8 +192,11 @@ create or replace package body entEMPLOYEES is
         ;/**/
         
     v_row        EMPLOYEES%rowtype;
+    v_row_mgr    EMPLOYEES%rowtype;
+    v_job        JOBS%rowtype;
     v_err        varchar2(250);
     v_message    messages.msg_text%type;
+    v_msg_addr   messages.dest_addr%type;
   begin
 
     -- Проверка на обязательные параметры
@@ -232,63 +235,78 @@ create or replace package body entEMPLOYEES is
     -- Создаем сотрудика
     tabEMPLOYEES.ins(p_row => v_row);
     
-    -- Данные сотрудника
-    for rec in (-- Получим тексты сообщений и, адрес руководителя и сотрудника
-                select decode(p_msg_type, tabMESSAGES.С_MSG_TYPE_EMAIL, em.mgr_email, em.mgr_phone_number) as mgr_addr -- телефон или email руководителя
-                      ,decode(p_msg_type, tabMESSAGES.С_MSG_TYPE_EMAIL, em.email, em.phone_number)         as emp_addr -- телефон или email сотрудника
-                      ,em.*
-                  from VW_EMPLOYEES em
-                 where em.employee_id = v_row.employee_id
-               )
-    loop 
-      -- Отправляем почту руководителю сотрудника
-      if rec.mgr_addr is not null then
-          
-        v_message := utl_lms.format_message(
-           entEMPLOYEES.C_MSG_EMPLT_GREET_MGR_TXT
-           --'Уважаемый %s %s! В ваше подразделение принят новый сотрудник %s %s в должности %s с окладом %s'
-           , TO_CHAR(rec.mgr_first_name)
-           , TO_CHAR(rec.mgr_last_name)
-           , TO_CHAR(rec.first_name)
-           , TO_CHAR(rec.last_name)
-           , TO_CHAR(rec.job_title)
-           , TO_CHAR(rec.salary)
-         );
-         
-        tabMESSAGES.message_ins(
-            p_msg_text  => v_message
-           ,p_msg_type  => p_msg_type
-           ,p_dest_addr => rec.mgr_addr);
-      end if;
-      
-      -- Сообщение для сотрудника
+    -- Получаем данные руководителя
+    tabEMPLOYEES.sel(p_id   => v_row.manager_id,
+                     p_row  => v_row_mgr);
+                     
+    tabEMPLOYEES.JOB_SEL(p_job_id => v_row.job_id,
+                         p_row    => v_job,
+                         p_rase   => false);
+    
+    -- Отправляем почту руководителю сотрудника
+    if v_row_mgr.last_name is not null then
       v_message := utl_lms.format_message(
-         entEMPLOYEES.C_MSG_EMPLT_GREET_EMP_TXT
-         --'Уважаемый %s %s! Вы приняты в качестве %s в подразделение %s.'
-         , TO_CHAR(rec.first_name)
-         , TO_CHAR(rec.last_name)
-         , TO_CHAR(rec.job_title)
-         , TO_CHAR(rec.department_name)
-       );
-       -- Если есть руководитель, ссылка на него
-       if rec.mgr_last_name is not null then
-         v_message := v_message || ' ' || utl_lms.format_message(
-           entEMPLOYEES.C_MSG_EMPLT_GREET_EMP_TXT2
-           --'Ваш руководитель: %s %s %s.'
-           , TO_CHAR(rec.mgr_job_title)
-           , TO_CHAR(rec.mgr_first_name)
-           , TO_CHAR(rec.mgr_last_name)
-         );
-       end if;
-       
-      -- Отправляем почту новому сотруднику
+                           entEMPLOYEES.C_MSG_EMPLT_GREET_MGR_TXT
+                           --'Уважаемый %s %s! В ваше подразделение принят новый сотрудник %s %s в должности %s с окладом %s'
+                           , TO_CHAR(v_row_mgr.first_name)
+                           , TO_CHAR(v_row_mgr.last_name)
+                           , TO_CHAR(v_row.first_name)
+                           , TO_CHAR(v_row.last_name)
+                           , TO_CHAR(v_job.job_title)
+                           , TO_CHAR(v_row.salary)
+                         );
+      case p_msg_type 
+        when tabMESSAGES.С_MSG_TYPE_EMAIL
+        then v_msg_addr := v_row_mgr.email;
+        else v_msg_addr := v_row_mgr.phone_number;
+      end case;
+      
       tabMESSAGES.message_ins(
           p_msg_text  => v_message
          ,p_msg_type  => p_msg_type
-         ,p_dest_addr => rec.emp_addr);
+         ,p_dest_addr => v_msg_addr);
+         
+    end if;
        
-    end loop; -- Данные сотрудника
-
+    v_message := utl_lms.format_message(
+                         entEMPLOYEES.C_MSG_EMPLT_GREET_EMP_TXT
+                         --'Уважаемый %s %s! Вы приняты в качестве %s в подразделение %s.'
+                         , TO_CHAR(v_row.first_name)
+                         , TO_CHAR(v_row.last_name)
+                         , TO_CHAR(v_row.last_name)
+                         , TO_CHAR(v_job.job_title)
+                         --, TO_CHAR(v_row.department_name) -- TO_DO 
+                       ) ;
+                       
+    -- Если есть руководитель, ссылка на него
+    if v_row_mgr.last_name is not null then
+      
+      tabEMPLOYEES.JOB_SEL(p_job_id => v_row_mgr.job_id,
+                           p_row    => v_job,
+                           p_rase   => false);
+                           
+      v_message := v_message || ' ' || utl_lms.format_message(
+                             entEMPLOYEES.C_MSG_EMPLT_GREET_EMP_TXT2
+                             --'Ваш руководитель: %s %s %s.'
+                             , TO_CHAR(v_row_mgr.first_name)
+                             , TO_CHAR(v_job.job_title)
+                             , TO_CHAR(v_row_mgr.first_name)
+                             , TO_CHAR(v_row_mgr.last_name)
+                           );
+    end if;
+    
+    case p_msg_type 
+      when tabMESSAGES.С_MSG_TYPE_EMAIL
+      then v_msg_addr := v_row.email;
+      else v_msg_addr := v_row.phone_number;
+    end case;
+    
+    -- Отправляем почту новому сотруднику
+    tabMESSAGES.message_ins(
+        p_msg_text  => v_message
+       ,p_msg_type  => p_msg_type
+       ,p_dest_addr => v_msg_addr);
+       
   end EMPLOYMENT;
 
 

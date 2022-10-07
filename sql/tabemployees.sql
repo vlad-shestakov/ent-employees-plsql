@@ -7,6 +7,26 @@ create or replace package tabEMPLOYEES is
   -- 07.10.2022 USER - v01
 
   ---------------------------------------------------------------
+  procedure JOB_SEL
+  (
+    p_job_id    in  JOBS.job_id %type
+   ,p_row       out JOBS%rowtype
+   ,p_rase      in boolean := true
+  )
+  /*
+    Процедура выполняет извлечение записи по ключу из таблицы JOBS
+
+    ПАРАМЕТРЫ
+      p_id         - Код записи для таблицы JOBS
+      p_row        - Возвращаемая запись JOBS
+      p_rase
+        true       - происходит вызов исключений
+        false      - исключения игнорируются
+
+  /**/
+  ;
+  
+  ---------------------------------------------------------------
   procedure sel
   (
     p_id        in EMPLOYEES.EMPLOYEE_ID%type
@@ -99,6 +119,45 @@ end tabEMPLOYEES;
 create or replace package body tabEMPLOYEES is
 
   ---------------------------------------------------------------
+  procedure JOB_SEL
+  (
+    p_job_id    in  JOBS.job_id %type
+   ,p_row       out JOBS%rowtype
+   ,p_rase      in boolean := true
+  )
+  /*
+    Процедура выполняет извлечение записи по ключу из таблицы JOBS
+
+    ПАРАМЕТРЫ
+      p_id         - Код записи для таблицы JOBS
+      p_row        - Возвращаемая запись JOBS
+      p_rase
+        true       - происходит вызов исключений
+        false      - исключения игнорируются
+
+  /**/
+  is
+  begin
+
+    for rec in (-- 
+                select j.*
+                  from JOBS j
+                 where j.job_id in p_job_id
+                )
+    loop
+      p_row := rec;
+    end loop;
+
+  exception
+    when others then
+      -- Если флаг обработки исключений включен - обрабатываем
+      if p_rase then
+        raise;
+      end if;
+      -- Иначе - нет
+  end JOB_SEL;
+  
+  ---------------------------------------------------------------
   procedure sel
   (
     p_id        in EMPLOYEES.EMPLOYEE_ID%type
@@ -137,12 +196,6 @@ create or replace package body tabEMPLOYEES is
   begin
 
     if p_forUpdate then
-
-      -- Выборка для обновления FOR UPDATE
-      /*select *
-       into p_row
-       from EMPLOYEES em
-      where em.employee_id in p_id for update; */
 
       for rec in CUR_EMPLOYEES_FU(p_id)
       loop
