@@ -1,0 +1,12 @@
+﻿create table REGIONS
+(
+  region_id   NUMBER,
+  region_name VARCHAR2(25)
+)
+;
+alter table REGIONS
+  add constraint REG_ID_PK primary key (REGION_ID);
+alter table REGIONS
+  add constraint REGION_ID_NN
+  check ("REGION_ID" IS NOT NULL);
+

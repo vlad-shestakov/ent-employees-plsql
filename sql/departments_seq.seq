@@ -1,0 +1,7 @@
+﻿create sequence DEPARTMENTS_SEQ
+minvalue 1
+maxvalue 9990
+start with 280
+increment by 10
+nocache;
+

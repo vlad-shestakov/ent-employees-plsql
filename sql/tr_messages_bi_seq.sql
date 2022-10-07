@@ -1,4 +1,4 @@
-create or replace trigger TR_MESSAGES_BI_SEQ
+﻿create or replace trigger TR_MESSAGES_BI_SEQ
   before insert
   on messages 
   for each row
@@ -10,3 +10,4 @@ begin
   end if;
 end TR_MESSAGES_BI_SEQ;
 /
+

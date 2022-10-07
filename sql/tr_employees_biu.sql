@@ -1,4 +1,4 @@
-create or replace trigger TR_EMPLOYEES_BIU
+﻿create or replace trigger TR_EMPLOYEES_BIU
   before insert or update or delete on EMPLOYEES
   for each row
 begin
@@ -20,3 +20,4 @@ begin
 
 end TR_MESSAGES_BI_SEQ;
 /
+
