@@ -181,50 +181,6 @@ end entEMPLOYEES;
 create or replace package body entEMPLOYEES is
 
   ---------------------------------------------------------------
-  -- Данные о сотруднике и его руководителе
-  cursor CUR_EMPLOYEE(c_employee_id in employees.employee_id%type) is
-    select em.employee_id
-          ,em.first_name
-          ,em.last_name
-          ,j.job_title
-          ,d.department_name
-          ,em.salary
-          ,jmg.job_title   as mgr_job_title
-          ,emg.first_name  as mgr_first_name
-          ,emg.last_name   as mgr_last_name
-          --,em.*
-      from EMPLOYEES em
-      left join JOBS j
-        on j.job_id = em.job_id
-      left join DEPARTMENTS d
-        on d.department_id = em.department_id
-      left join EMPLOYEES emg
-        on emg.employee_id = em.manager_id
-      left join JOBS jmg
-        on jmg.job_id = em.job_id
-     where 1=1
-       and em.employee_id = C_EMPLOYEE_ID;
-
-  ---------------------------------------------------------------
-  -- Cредние зарплаты, комиссии по отделу и должности
-  cursor CUR_AVG_DEPT_SALARY(
-    c_department_id in employees.department_id%type
-   ,c_job_id        in employees.job_id%type
-  )
-  is
-    select distinct
-           em.department_id
-          ,em.job_id
-          ,round(avg(em.salary) over ( partition by em.department_id, em.job_id), 2) as avg_dept_salary -- Средняя зарплата сотрудника по отделу
-          ,round(avg(em.commission_pct) over ( partition by em.department_id, em.job_id), 2) as avg_dept_commission_pct -- Средняя комиссия сотрудника по отделу
-        from EMPLOYEES em
-       where 1=1
-         and em.department_id = C_DEPARTMENT_ID
-         and em.job_id = C_JOB_ID
-    ;/**/
-
-
-  ---------------------------------------------------------------
   function GET_GREETING_MGR_TEXT
   (
     p_id  in employees.employee_id%type
@@ -239,7 +195,13 @@ create or replace package body entEMPLOYEES is
   is
     v_res messages.msg_text%type;
   begin
-    for rec in CUR_EMPLOYEE(p_id)
+    -- Получим сотрудника
+    for rec in (--
+                select *
+                  from VW_EMPLOYEES em
+                 where 1=1
+                   and em.employee_id = p_id
+               )
     loop
       v_res := utl_lms.format_message(
          entEMPLOYEES.C_MSG_EMPLT_GREET_MGR_TXT
@@ -270,7 +232,13 @@ create or replace package body entEMPLOYEES is
   is
     v_res messages.msg_text%type;
   begin
-    for rec in CUR_EMPLOYEE(p_id)
+    -- Получим сотрудника
+    for rec in (--
+                select *
+                  from VW_EMPLOYEES em
+                 where 1=1
+                   and em.employee_id = p_id
+               )
     loop
       v_res := utl_lms.format_message(
          entEMPLOYEES.C_MSG_EMPLT_GREET_EMP_TXT
@@ -405,6 +373,25 @@ create or replace package body entEMPLOYEES is
       исключения при нарушении ограничений на данные таблицы.
   /**/
   is
+  
+      
+      -- Cредние зарплаты, комиссии по отделу и должности
+      cursor CUR_AVG_DEPT_SALARY(
+        c_department_id in employees.department_id%type
+       ,c_job_id        in employees.job_id%type
+      )
+      is
+        select distinct
+               em.department_id
+              ,em.job_id
+              ,round(avg(em.salary) over ( partition by em.department_id, em.job_id), 2) as avg_dept_salary -- Средняя зарплата сотрудника по отделу
+              ,round(avg(em.commission_pct) over ( partition by em.department_id, em.job_id), 2) as avg_dept_commission_pct -- Средняя комиссия сотрудника по отделу
+            from EMPLOYEES em
+           where 1=1
+             and em.department_id = C_DEPARTMENT_ID
+             and em.job_id = C_JOB_ID
+        ;/**/
+        
     v_row        EMPLOYEES%rowtype;
     v_err        varchar2(250);
     v_emp_msg    messages.msg_text%type;
