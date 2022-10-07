@@ -9,7 +9,8 @@ create or replace package entEMPLOYEES is
   -- КОНСТАНТЫ
   
     -- Текст сообщения для вновь принятого работника
-    C_GREETING_EMP_TEXT constant messages.msg_text%type :=  'Уважаемый %s %s! Вы приняты в качестве %s в подразделение %s. Ваш руководитель: %s %s %s.';
+    C_GREETING_EMP_TEXT constant messages.msg_text%type :=  'Уважаемый %s %s! Вы приняты в качестве %s в подразделение %s.';
+    C_GREETING_EMP_TEXT2 constant messages.msg_text%type :=  'Ваш руководитель: %s %s %s.';
     -- Уважаемый < FIRST_NAME > < LAST_NAME >! Вы приняты в качестве < JOB_TITLE > в подразделение < DEPARTMENT_NAME >. 
     -- Ваш руководитель: < JOB_TITLE > < FIRST_NAME > < LAST_NAME >”.
 
@@ -231,15 +232,24 @@ create or replace package body entEMPLOYEES is
     loop 
       v_res := utl_lms.format_message(
          entEMPLOYEES.C_GREETING_EMP_TEXT
-         --'Уважаемый %s %s! Вы приняты в качестве %s в подразделение %s. Ваш руководитель: %s %s %s.'
+         --'Уважаемый %s %s! Вы приняты в качестве %s в подразделение %s.'
          , TO_CHAR(rec.first_name)
          , TO_CHAR(rec.last_name)
          , TO_CHAR(rec.job_title)
          , TO_CHAR(rec.department_name)
-         , TO_CHAR(rec.mgr_job_title)
-         , TO_CHAR(rec.mgr_first_name)
-         , TO_CHAR(rec.mgr_last_name)
        );
+       
+       -- Если есть руководитель, ссылка на него
+       if rec.mgr_last_name is not null then  
+         v_res := v_res || ' ' || utl_lms.format_message(
+           entEMPLOYEES.C_GREETING_EMP_TEXT2
+           --'Ваш руководитель: %s %s %s.'
+           , TO_CHAR(rec.mgr_job_title)
+           , TO_CHAR(rec.mgr_first_name)
+           , TO_CHAR(rec.mgr_last_name)
+         );
+       end if;
+    
     end loop; 
     return v_res;
   end;
@@ -412,12 +422,6 @@ create or replace package body entEMPLOYEES is
     --dbms_output.put_line('v_row.employee_id = ' || v_row.employee_id); --< Для отладки 
     --dbms_output.put_line('v_mgr_email = ' || v_mgr_email); --< Для отладки 
     
-    -- Отправляем почту новому сотруднику
-    entEMPLOYEES.message_ins(
-        p_msg_text  => v_emp_msg
-       ,p_msg_type  => С_MSG_TYPE
-       ,p_dest_addr => v_row.email);
-       
     if v_mgr_email is not null then 
       -- Отправляем почту руководителю сотрудника
       entEMPLOYEES.message_ins(
@@ -425,6 +429,12 @@ create or replace package body entEMPLOYEES is
          ,p_msg_type  => С_MSG_TYPE
          ,p_dest_addr => v_mgr_email);
     end if;
+    
+    -- Отправляем почту новому сотруднику
+    entEMPLOYEES.message_ins(
+        p_msg_text  => v_emp_msg
+       ,p_msg_type  => С_MSG_TYPE
+       ,p_dest_addr => v_row.email);
        
   end employment; 
   

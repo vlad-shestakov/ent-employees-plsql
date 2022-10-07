@@ -32,7 +32,8 @@ create or replace package body entEMPLOYEES_TEST is
     v_emp_msg messages.msg_text%type;
     v_mgr_msg messages.msg_text%type;
   begin
-  
+    dbms_output.put_line('Тест сообщений для работника и начальника'); --< Для отладки 
+    
     select entEMPLOYEES.get_greeting_emp_text(v_id) as emp_msg
           ,entEMPLOYEES.get_greeting_mgr_text(v_id) as mgr_msg
       into v_emp_msg, v_mgr_msg
@@ -40,6 +41,7 @@ create or replace package body entEMPLOYEES_TEST is
   
     dbms_output.put_line('v_emp_msg = ' || v_emp_msg);
     dbms_output.put_line('C_GREETING_EMP_TEXT = ' || entEMPLOYEES.C_GREETING_EMP_TEXT);
+    dbms_output.put_line('C_GREETING_EMP_TEXT2 = ' || entEMPLOYEES.C_GREETING_EMP_TEXT2);
     
     dbms_output.put_line('');
     dbms_output.put_line('v_mgr_msg = ' || v_mgr_msg);
@@ -53,6 +55,7 @@ create or replace package body entEMPLOYEES_TEST is
     v_id  EMPLOYEES.EMPLOYEE_ID%type;
     v_row EMPLOYEES%rowtype;
   begin
+    dbms_output.put_line('Создает сотрудника, возвращает ошибку, не указана должность и департамент'); --< Для отладки 
     begin -- exception block
       dbms_output.put_line('Create EMP'); --< Для отладки 
       entEmployees.employment(p_first_name     => 'John',
@@ -95,7 +98,9 @@ create or replace package body entEMPLOYEES_TEST is
     v_dest_addr   MESSAGES.dest_addr%type;
     v_dest_addr2  MESSAGES.dest_addr%type;
   begin
-    v_dest_addr  := 'abc@def.com2';
+    dbms_output.put_line('Создает сотрудника, со ссылкой на менеджера (отправит два сообщения на почту), оклад и процент не указаны (усредненные)'); --< Для отладки 
+    
+    v_dest_addr  := 'employment_t2@def.com';
     v_dest_addr2 := 'NGREENBE';
     
     dbms_output.put_line('Create EMP'); --< Для отладки 
@@ -114,7 +119,7 @@ create or replace package body entEMPLOYEES_TEST is
       into v_id
       from EMPLOYEES e
      where 1=1
-       and e.email = 'abc@def.com2'
+       and e.email = v_dest_addr
     ;/**/                         
   
     tabEMPLOYEES.sel(p_id => v_id, p_row => v_row);
@@ -122,6 +127,73 @@ create or replace package body entEMPLOYEES_TEST is
     dbms_output.put_line('v_id = ' || v_id);
     dbms_output.put_line('v_row.last_name = ' || v_row.last_name);
     dbms_output.put_line('v_row.email = ' || v_row.email);
+    dbms_output.put_line('v_row.manager_id = ' || v_row.manager_id);
+    dbms_output.put_line('v_row.salary = ' || v_row.salary);
+    dbms_output.put_line('v_row.commission_pct = ' || v_row.commission_pct);
+    
+    
+    -- Найдем сообщение
+    dbms_output.put_line('Find messages:'); --< Для отладки 
+    for rec in (--
+                select m.*
+                  from MESSAGES m
+                 where 1=1
+                   and m.msg_type = v_msg_type
+                   and m.dest_addr in (v_dest_addr, v_dest_addr2)
+                   --and rownum <= 1
+                 order by 1 desc
+               )
+    loop
+      dbms_output.put_line('  id = ' || rec.id);
+      dbms_output.put_line('  rec.p_msg_text = ' || rec.msg_text);
+      dbms_output.put_line('  rec.msg_state  = ' || rec.msg_state);
+    end loop; -- Конец перебора
+      
+  end;
+  
+  
+  --------------------------------------------------------------- 
+  procedure EMPLOYMENT_T3
+  -- Создаем сотрудника
+  is
+    v_id          EMPLOYEES.EMPLOYEE_ID%type;
+    v_row         EMPLOYEES%rowtype;
+    v_msg_type    MESSAGES.msg_type%type := entEmployees.С_MSG_TYPE;
+    v_dest_addr   MESSAGES.dest_addr%type;
+    v_dest_addr2  MESSAGES.dest_addr%type;
+  begin
+    dbms_output.put_line('Создает сотрудника, без ссылки на менеджера (отправит только одно сообщение на почту), с фиксированным окладом'); --< Для отладки 
+    
+    v_dest_addr  := 'employment_t3@def.com';
+    v_dest_addr2 := '';
+    
+    dbms_output.put_line('Create EMP'); --< Для отладки 
+    entEmployees.employment(p_first_name     => 'John',
+                            p_last_name      => 'Connor',
+                            p_email          => v_dest_addr,
+                            p_phone_number   => '+7804650',
+                            p_job_id         => 'SA_REP',
+                            p_department_id  => 80,
+                            p_manager_id     => null,
+                            p_salary         => 110000,
+                            p_commission_pct => 0.1);
+     
+    -- Найдем клиента
+    select max(e.employee_id)
+      into v_id
+      from EMPLOYEES e
+     where 1=1
+       and e.email = v_dest_addr
+    ;/**/                         
+  
+    tabEMPLOYEES.sel(p_id => v_id, p_row => v_row);
+      
+    dbms_output.put_line('v_id = ' || v_id);
+    dbms_output.put_line('v_row.last_name = ' || v_row.last_name);
+    dbms_output.put_line('v_row.email = ' || v_row.email);
+    dbms_output.put_line('v_row.manager_id = ' || v_row.manager_id);
+    dbms_output.put_line('v_row.salary = ' || v_row.salary);
+    dbms_output.put_line('v_row.commission_pct = ' || v_row.commission_pct);
     
     
     -- Найдем сообщение
@@ -200,6 +272,10 @@ create or replace package body entEMPLOYEES_TEST is
       dbms_output.put_line('');
       dbms_output.put_line('Тест - EMPLOYMENT_T2');
       EMPLOYMENT_T2;
+    
+      dbms_output.put_line('');
+      dbms_output.put_line('Тест - EMPLOYMENT_T3');
+      EMPLOYMENT_T3;
     
     exception
       when others then
