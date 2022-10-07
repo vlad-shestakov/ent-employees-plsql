@@ -334,8 +334,10 @@ create or replace package body entEMPLOYEES_TEST is
   procedure PAYRISE_T2
   -- Повышаем оклад
   is
-    v_id      employees.employee_id%type := 108;
-    v_row EMPLOYEES%rowtype;
+    v_id        employees.employee_id%type := 108;
+    v_row       EMPLOYEES%rowtype;
+    v_msg_type  MESSAGES.msg_type%type     := 'email';
+    v_dest_addr MESSAGES.dest_addr%type    := 'NKOCHHAR';
   begin
     
     dbms_output.put_line('Повышает оклад сотрудника, + 10%'); --< Для отладки
@@ -352,6 +354,26 @@ create or replace package body entEMPLOYEES_TEST is
     tabEMPLOYEES.sel(p_id => v_id, p_row => v_row);
     dbms_output.put_line('NEW v_row.salary = ' || v_row.salary);
 
+    -- Найдем сообщение
+    dbms_output.put_line('Find messages...'); --< Для отладки 
+    for rec in (--
+                select m2.*
+                  from MESSAGES m2
+                 where 1=1
+                   and m2.id in (--
+                                select max(m.id)
+                                  from MESSAGES m
+                                 where 1=1
+                                   and m.msg_type = v_msg_type
+                                   and m.dest_addr = v_dest_addr
+                       )
+               )
+    loop
+      dbms_output.put_line('id = ' || rec.id);
+      dbms_output.put_line('rec.p_msg_text = ' || rec.msg_text);
+      dbms_output.put_line('rec.msg_state  = ' || rec.msg_state);
+    end loop; -- Конец перебора
+    
   end;
   
   ---------------------------------------------------------------
