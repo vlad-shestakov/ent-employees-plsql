@@ -64,7 +64,7 @@ create or replace package entEMPLOYEES is
    ,p_manager_id             in employees.manager_id%type
    ,p_salary                 in employees.salary%type
    ,p_commission_pct         in employees.commission_pct%type
-   ,p_msg_type               in messages.msg_type%type := tabMESSAGES.С_MSG_TYPE_EMAIL -- Тип сообщения для отправки sms / email
+   ,p_msg_type               in messages.msg_type%type := tabEMPLOYEES.С_MSG_TYPE_EMAIL -- Тип сообщения для отправки sms / email
   )
   /*
     Процедура реализует функционал приема на работу нового сотрудника.
@@ -95,7 +95,7 @@ create or replace package entEMPLOYEES is
   (
     p_employee_id            in employees.employee_id%type
    ,p_salary                 in employees.salary%type default null 
-   ,p_msg_type               in messages.msg_type%type := tabMESSAGES.С_MSG_TYPE_EMAIL -- Тип сообщения для отправки sms / email
+   ,p_msg_type               in messages.msg_type%type := tabEMPLOYEES.С_MSG_TYPE_EMAIL -- Тип сообщения для отправки sms / email
   )
   /*
     Процедура реализует повышение оклада сотруднику
@@ -116,7 +116,7 @@ create or replace package entEMPLOYEES is
   procedure LEAVE
   (
     p_employee_id            in employees.employee_id%type
-   ,p_msg_type               in messages.msg_type%type      := tabMESSAGES.С_MSG_TYPE_EMAIL -- Тип сообщения для отправки sms / email
+   ,p_msg_type               in messages.msg_type%type      := tabEMPLOYEES.С_MSG_TYPE_EMAIL -- Тип сообщения для отправки sms / email
   )
   /*
     Процедура реализует увольнение сотрудника
@@ -147,7 +147,7 @@ create or replace package body entEMPLOYEES is
    ,p_manager_id             in employees.manager_id%type
    ,p_salary                 in employees.salary%type
    ,p_commission_pct         in employees.commission_pct%type
-   ,p_msg_type               in messages.msg_type%type := tabMESSAGES.С_MSG_TYPE_EMAIL -- Тип сообщения для отправки sms / email
+   ,p_msg_type               in messages.msg_type%type := tabEMPLOYEES.С_MSG_TYPE_EMAIL -- Тип сообщения для отправки sms / email
   )
   /*
     Процедура реализует функционал приема на работу нового сотрудника.
@@ -194,6 +194,8 @@ create or replace package body entEMPLOYEES is
     v_row        EMPLOYEES%rowtype;
     v_row_mgr    EMPLOYEES%rowtype;
     v_job        JOBS%rowtype;
+    v_job_mgr    JOBS%rowtype;
+    v_department DEPARTMENTS%rowtype;
     v_err        varchar2(250);
     v_message    messages.msg_text%type;
     v_msg_addr   messages.dest_addr%type;
@@ -233,15 +235,22 @@ create or replace package body entEMPLOYEES is
     end if;
 
     -- Создаем сотрудика
-    tabEMPLOYEES.ins(p_row => v_row);
+    tabEMPLOYEES.INS(p_row => v_row);
     
-    -- Получаем данные руководителя
-    tabEMPLOYEES.sel(p_id   => v_row.manager_id,
-                     p_row  => v_row_mgr);
-                     
+    -- Должность сотрудника                 
     tabEMPLOYEES.JOB_SEL(p_job_id => v_row.job_id,
                          p_row    => v_job,
                          p_rase   => false);
+                         
+    -- Отдел сотрудника  
+    tabEMPLOYEES.DEPARTMENTS_SEL(p_department_id => v_row.department_id,
+                                 p_row           => v_department,
+                                 p_rase          => false);
+    
+    -- Получаем данные руководителя
+    tabEMPLOYEES.SEL(p_id   => v_row.manager_id,
+                     p_row  => v_row_mgr);
+    
     
     -- Отправляем почту руководителю сотрудника
     if v_row_mgr.last_name is not null then
@@ -256,12 +265,12 @@ create or replace package body entEMPLOYEES is
                            , TO_CHAR(v_row.salary)
                          );
       case p_msg_type 
-        when tabMESSAGES.С_MSG_TYPE_EMAIL
+        when tabEMPLOYEES.С_MSG_TYPE_EMAIL
         then v_msg_addr := v_row_mgr.email;
         else v_msg_addr := v_row_mgr.phone_number;
       end case;
       
-      tabMESSAGES.message_ins(
+      tabEMPLOYEES.MESSAGE_INS(
           p_msg_text  => v_message
          ,p_msg_type  => p_msg_type
          ,p_dest_addr => v_msg_addr);
@@ -273,36 +282,35 @@ create or replace package body entEMPLOYEES is
                          --'Уважаемый %s %s! Вы приняты в качестве %s в подразделение %s.'
                          , TO_CHAR(v_row.first_name)
                          , TO_CHAR(v_row.last_name)
-                         , TO_CHAR(v_row.last_name)
                          , TO_CHAR(v_job.job_title)
-                         --, TO_CHAR(v_row.department_name) -- TO_DO 
+                         , TO_CHAR(v_department.department_name)
                        ) ;
                        
     -- Если есть руководитель, ссылка на него
     if v_row_mgr.last_name is not null then
       
+      -- Должность руководителя   
       tabEMPLOYEES.JOB_SEL(p_job_id => v_row_mgr.job_id,
-                           p_row    => v_job,
+                           p_row    => v_job_mgr,
                            p_rase   => false);
                            
       v_message := v_message || ' ' || utl_lms.format_message(
                              entEMPLOYEES.C_MSG_EMPLT_GREET_EMP_TXT2
                              --'Ваш руководитель: %s %s %s.'
-                             , TO_CHAR(v_row_mgr.first_name)
-                             , TO_CHAR(v_job.job_title)
+                             , TO_CHAR(v_job_mgr.job_title)
                              , TO_CHAR(v_row_mgr.first_name)
                              , TO_CHAR(v_row_mgr.last_name)
                            );
     end if;
     
     case p_msg_type 
-      when tabMESSAGES.С_MSG_TYPE_EMAIL
+      when tabEMPLOYEES.С_MSG_TYPE_EMAIL
       then v_msg_addr := v_row.email;
       else v_msg_addr := v_row.phone_number;
     end case;
     
     -- Отправляем почту новому сотруднику
-    tabMESSAGES.message_ins(
+    tabEMPLOYEES.MESSAGE_INS(
         p_msg_text  => v_message
        ,p_msg_type  => p_msg_type
        ,p_dest_addr => v_msg_addr);
@@ -315,7 +323,7 @@ create or replace package body entEMPLOYEES is
   (
     p_employee_id            in employees.employee_id%type
    ,p_salary                 in employees.salary%type default null 
-   ,p_msg_type               in messages.msg_type%type := tabMESSAGES.С_MSG_TYPE_EMAIL -- Тип сообщения для отправки sms / email
+   ,p_msg_type               in messages.msg_type%type := tabEMPLOYEES.С_MSG_TYPE_EMAIL -- Тип сообщения для отправки sms / email
   )
   /*
     Процедура реализует повышение оклада сотруднику
@@ -339,7 +347,7 @@ create or replace package body entEMPLOYEES is
     
     -- Получим сотрудника
     for rec in (-- Получим тексты сообщений и, адрес руководителя и сотрудника
-                select decode(p_msg_type, tabMESSAGES.С_MSG_TYPE_EMAIL, em.mgr_email, em.mgr_phone_number) as mgr_addr -- телефон или email руководителя
+                select decode(p_msg_type, tabEMPLOYEES.С_MSG_TYPE_EMAIL, em.mgr_email, em.mgr_phone_number) as mgr_addr -- телефон или email руководителя
                       ,em.*
                   from VW_EMPLOYEES em
                  where 1=1
@@ -354,11 +362,11 @@ create or replace package body entEMPLOYEES is
       end if;
 
       -- Получаем сотрудника
-      tabEMPLOYEES.sel(p_id => p_employee_id, p_row => v_row);
+      tabEMPLOYEES.SEL(p_id => p_employee_id, p_row => v_row);
 
       -- Обновляем данные
-      v_row.salary       := v_salary;
-      tabEMPLOYEES.upd(p_row => v_row);
+      v_row.salary := v_salary;
+      tabEMPLOYEES.UPD(p_row => v_row);
 
       -- Отправляем почту руководителю сотрудника
       if rec.mgr_addr is not null then
@@ -374,7 +382,7 @@ create or replace package body entEMPLOYEES is
            , TO_CHAR(v_salary)
          );
          
-        tabMESSAGES.message_ins(
+        tabEMPLOYEES.MESSAGE_INS(
             p_msg_text  => v_message
            ,p_msg_type  => p_msg_type
            ,p_dest_addr => rec.mgr_addr);
@@ -388,7 +396,7 @@ create or replace package body entEMPLOYEES is
   procedure LEAVE
   (
     p_employee_id            in employees.employee_id%type
-   ,p_msg_type               in messages.msg_type%type      := tabMESSAGES.С_MSG_TYPE_EMAIL -- Тип сообщения для отправки sms / email
+   ,p_msg_type               in messages.msg_type%type      := tabEMPLOYEES.С_MSG_TYPE_EMAIL -- Тип сообщения для отправки sms / email
   )
   /*
     Процедура реализует увольнение сотрудника
@@ -408,7 +416,7 @@ create or replace package body entEMPLOYEES is
     
     -- Получим сотрудника
     for rec in (-- Получим тексты сообщений и, адрес руководителя
-                select decode(p_msg_type, tabMESSAGES.С_MSG_TYPE_EMAIL, em.mgr_email, em.mgr_phone_number) as mgr_addr -- телефон или email руководителя
+                select decode(p_msg_type, tabEMPLOYEES.С_MSG_TYPE_EMAIL, em.mgr_email, em.mgr_phone_number) as mgr_addr -- телефон или email руководителя
                       ,em.*
                   from VW_EMPLOYEES em
                  where 1=1
@@ -428,16 +436,16 @@ create or replace package body entEMPLOYEES is
     end loop;
     
     -- Получаем сотрудника
-    tabEMPLOYEES.sel(p_id => p_employee_id, p_row => v_row);
+    tabEMPLOYEES.SEL(p_id => p_employee_id, p_row => v_row);
 
     -- Увольняем сотрудника
     -- Обновляем данные
     v_row.department_id       := null;
-    tabEMPLOYEES.upd(p_row => v_row);
+    tabEMPLOYEES.UPD(p_row => v_row);
     
     -- Отправляем почту руководителю сотрудника
     if v_mgr_addr is not null then
-      tabMESSAGES.message_ins(
+      tabEMPLOYEES.MESSAGE_INS(
           p_msg_text  => v_message
          ,p_msg_type  => p_msg_type
          ,p_dest_addr => v_mgr_addr);
