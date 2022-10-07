@@ -1,5 +1,4 @@
-create or replace view VW_EMPLOYEES 
-as
+﻿create or replace force view vw_employees as
 select -- Данные о сотруднике, руководителе
        em.employee_id
       ,em.first_name
@@ -17,7 +16,7 @@ select -- Данные о сотруднике, руководителе
       ,emg.last_name     as mgr_last_name
        --,emg.first_name || ' ' || emg.last_name as mgr_full_name
       ,em.email
-      ,em.phone_number   
+      ,em.phone_number
       ,emg.email         as mgr_email
       ,emg.phone_number  as mgr_phone_number
       ,em.hire_date
@@ -38,3 +37,4 @@ select -- Данные о сотруднике, руководителе
  where 1=1
    --and em.employee_id in 107
 ;
+

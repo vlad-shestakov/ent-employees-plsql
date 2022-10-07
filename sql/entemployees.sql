@@ -1,4 +1,4 @@
-create or replace package entEMPLOYEES is
+﻿create or replace package entEMPLOYEES is
 
   -- Created : 07.10.2022 2:12:18
   -- Purpose : Обработка бизнес-логики объектов из таблицы EMPLOYEES
@@ -133,6 +133,7 @@ create or replace package entEMPLOYEES is
 
 end entEMPLOYEES;
 /
+
 create or replace package body entEMPLOYEES is
 
   ---------------------------------------------------------------
@@ -462,3 +463,4 @@ create or replace package body entEMPLOYEES is
 
 end entEMPLOYEES;
 /
+

@@ -1,10 +1,10 @@
 ﻿create table MESSAGES
 (
-  id        NUMBER,
+  id        NUMBER not null,
   msg_text  VARCHAR2(2000),
-  msg_type  VARCHAR2(10),
+  msg_type  VARCHAR2(10) not null,
   dest_addr VARCHAR2(150),
-  msg_state NUMBER(4)
+  msg_state NUMBER(4) default 0 not null
 )
 ;
 comment on column MESSAGES.id
@@ -17,4 +17,10 @@ comment on column MESSAGES.dest_addr
   is 'адрес получателя сообщения (email, номер телефона) ';
 comment on column MESSAGES.msg_state
   is 'статус обработки сообщения внешней системой (0 - добавлено в очередь, 1 - успешно отправлено, -1 - отправлено с ошибкой) ';
+alter table MESSAGES
+  add constraint CHK_MESSAGES_STATE
+  check (MSG_STATE in (-1, 0, 1));
+alter table MESSAGES
+  add constraint CHK_MESSAGES_TYPE
+  check (MSG_TYPE in ('email', 'sms'));
 
