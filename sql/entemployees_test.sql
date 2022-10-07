@@ -24,29 +24,6 @@ end entEMPLOYEES_TEST;
 /
 create or replace package body entEMPLOYEES_TEST is
 
-  ---------------------------------------------------------------
-  procedure MSG_T
-  -- Сообщения для работника, начальника
-  is
-    v_id      employees.employee_id%type := 108;
-    v_emp_msg messages.msg_text%type;
-    v_mgr_msg messages.msg_text%type;
-  begin
-    dbms_output.put_line('Тест сообщений для работника и начальника'); --< Для отладки
-
-    select entEMPLOYEES.get_greeting_emp_text(v_id) as emp_msg
-          ,entEMPLOYEES.get_greeting_mgr_text(v_id) as mgr_msg
-      into v_emp_msg, v_mgr_msg
-      from dual;
-
-    dbms_output.put_line('v_emp_msg = ' || v_emp_msg);
-    dbms_output.put_line('C_MSG_EMPLT_GREET_EMP_TXT = ' || entEMPLOYEES.C_MSG_EMPLT_GREET_EMP_TXT);
-    dbms_output.put_line('C_MSG_EMPLT_GREET_EMP_TXT2 = ' || entEMPLOYEES.C_MSG_EMPLT_GREET_EMP_TXT2);
-
-    dbms_output.put_line('');
-    dbms_output.put_line('v_mgr_msg = ' || v_mgr_msg);
-    dbms_output.put_line('C_MSG_EMPLT_GREET_MGR_TXT = ' || entEMPLOYEES.C_MSG_EMPLT_GREET_MGR_TXT);
-  end;
 
   ---------------------------------------------------------------
   procedure EMPLOYMENT_T
@@ -397,10 +374,6 @@ create or replace package body entEMPLOYEES_TEST is
   begin
     begin
       -- exception block
-
-      dbms_output.put_line('');
-      dbms_output.put_line('Тест - MSG_T');
-      MSG_T;
 
       dbms_output.put_line('');
       dbms_output.put_line('Тест - MESSAGE_INS_T');

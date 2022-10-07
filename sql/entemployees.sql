@@ -51,34 +51,6 @@ create or replace package entEMPLOYEES is
     pragma exception_init(EX_PAYRISE_EMP_SALARY_EXCCESS, -20102);
 
   ---------------------------------------------------------------
-  function GET_GREETING_MGR_TEXT
-  (
-    p_id  in employees.employee_id%type
-  )
-  return messages.msg_text%type
-  /*
-    Возвращяет текст сообщения для руководителя работника
-
-    ПАРАМЕТРЫ
-      p_id - Код сотрудника
-  /**/
-  ;
-
-  ---------------------------------------------------------------
-  function GET_GREETING_EMP_TEXT
-  (
-    p_id  in employees.employee_id%type
-  )
-  return messages.msg_text%type
-  /*
-    Возвращяет текст сообщения для работника
-
-    ПАРАМЕТРЫ
-      p_id - Код сотрудника
-  /**/
-  ;
-
-  ---------------------------------------------------------------
   procedure MESSAGE_INS
   (
     p_row    in MESSAGES%rowtype
@@ -183,91 +155,6 @@ create or replace package entEMPLOYEES is
 end entEMPLOYEES;
 /
 create or replace package body entEMPLOYEES is
-
-  ---------------------------------------------------------------
-  function GET_GREETING_MGR_TEXT
-  (
-    p_id  in employees.employee_id%type
-  )
-  return messages.msg_text%type
-  /*
-    Возвращяет текст сообщения для руководителя работника
-
-    ПАРАМЕТРЫ
-      p_id - Код сотрудника
-  /**/
-  is
-    v_res messages.msg_text%type;
-  begin
-    -- Получим сотрудника
-    for rec in (--
-                select *
-                  from VW_EMPLOYEES em
-                 where 1=1
-                   and em.employee_id = p_id
-               )
-    loop
-      v_res := utl_lms.format_message(
-         entEMPLOYEES.C_MSG_EMPLT_GREET_MGR_TXT
-         --'Уважаемый %s %s! В ваше подразделение принят новый сотрудник %s %s в должности %s с окладом %s'
-         , TO_CHAR(rec.mgr_first_name)
-         , TO_CHAR(rec.mgr_last_name)
-         , TO_CHAR(rec.first_name)
-         , TO_CHAR(rec.last_name)
-         , TO_CHAR(rec.job_title)
-         , TO_CHAR(rec.salary)
-       );
-    end loop;
-    return v_res;
-  end;
-
-  ---------------------------------------------------------------
-  function GET_GREETING_EMP_TEXT
-  (
-    p_id  in employees.employee_id%type
-  )
-  return messages.msg_text%type
-  /*
-    Возвращяет текст сообщения для работника
-
-    ПАРАМЕТРЫ
-      p_id - Код сотрудника
-  /**/
-  is
-    v_res messages.msg_text%type;
-  begin
-    -- Получим сотрудника
-    for rec in (--
-                select *
-                  from VW_EMPLOYEES em
-                 where 1=1
-                   and em.employee_id = p_id
-               )
-    loop
-      v_res := utl_lms.format_message(
-         entEMPLOYEES.C_MSG_EMPLT_GREET_EMP_TXT
-         --'Уважаемый %s %s! Вы приняты в качестве %s в подразделение %s.'
-         , TO_CHAR(rec.first_name)
-         , TO_CHAR(rec.last_name)
-         , TO_CHAR(rec.job_title)
-         , TO_CHAR(rec.department_name)
-       );
-
-       -- Если есть руководитель, ссылка на него
-       if rec.mgr_last_name is not null then
-         v_res := v_res || ' ' || utl_lms.format_message(
-           entEMPLOYEES.C_MSG_EMPLT_GREET_EMP_TXT2
-           --'Ваш руководитель: %s %s %s.'
-           , TO_CHAR(rec.mgr_job_title)
-           , TO_CHAR(rec.mgr_first_name)
-           , TO_CHAR(rec.mgr_last_name)
-         );
-       end if;
-
-    end loop;
-    return v_res;
-  end;
-
 
   ---------------------------------------------------------------
   procedure MESSAGE_INS
@@ -398,10 +285,7 @@ create or replace package body entEMPLOYEES is
         
     v_row        EMPLOYEES%rowtype;
     v_err        varchar2(250);
-    v_emp_msg    messages.msg_text%type;
-    v_mgr_msg    messages.msg_text%type;
-    v_mgr_addr   messages.dest_addr%type;
-    v_emp_addr   messages.dest_addr%type;
+    v_message    messages.msg_text%type;
   begin
 
     -- Проверка на обязательные параметры
@@ -439,33 +323,63 @@ create or replace package body entEMPLOYEES is
 
     -- Создаем сотрудика
     tabEMPLOYEES.ins(p_row => v_row);
-
-    -- Получим тексты сообщений и, адрес руководителя и сотрудника
-    select entEMPLOYEES.get_greeting_emp_text(v_row.employee_id) as emp_msg
-          ,entEMPLOYEES.get_greeting_mgr_text(v_row.employee_id) as mgr_msg
-          ,decode(p_msg_type, С_MSG_TYPE_EMAIL, em.mgr_email, em.mgr_phone_number) -- телефон или email руководителя
-          ,decode(p_msg_type, С_MSG_TYPE_EMAIL, em.email, em.phone_number) -- телефон или email сотрудника
-      into v_emp_msg, v_mgr_msg, v_mgr_addr, v_emp_addr
-      from dual
-      left join VW_EMPLOYEES em
-        on em.employee_id = v_row.employee_id;
-
-    dbms_output.put_line('  v_mgr_addr = ' || v_mgr_addr); --< Для отладки
-    dbms_output.put_line('  v_emp_addr = ' || v_emp_addr); --< Для отладки
-
-    if v_mgr_addr is not null then
+    
+    -- Данные сотрудника
+    for rec in (-- Получим тексты сообщений и, адрес руководителя и сотрудника
+                select decode(p_msg_type, С_MSG_TYPE_EMAIL, em.mgr_email, em.mgr_phone_number) as mgr_addr -- телефон или email руководителя
+                      ,decode(p_msg_type, С_MSG_TYPE_EMAIL, em.email, em.phone_number)         as emp_addr -- телефон или email сотрудника
+                      ,em.*
+                  from VW_EMPLOYEES em
+                 where em.employee_id = v_row.employee_id
+               )
+    loop 
       -- Отправляем почту руководителю сотрудника
+      if rec.mgr_addr is not null then
+          
+        v_message := utl_lms.format_message(
+           entEMPLOYEES.C_MSG_EMPLT_GREET_MGR_TXT
+           --'Уважаемый %s %s! В ваше подразделение принят новый сотрудник %s %s в должности %s с окладом %s'
+           , TO_CHAR(rec.mgr_first_name)
+           , TO_CHAR(rec.mgr_last_name)
+           , TO_CHAR(rec.first_name)
+           , TO_CHAR(rec.last_name)
+           , TO_CHAR(rec.job_title)
+           , TO_CHAR(rec.salary)
+         );
+         
+        entEMPLOYEES.message_ins(
+            p_msg_text  => v_message
+           ,p_msg_type  => p_msg_type
+           ,p_dest_addr => rec.mgr_addr);
+      end if;
+      
+      -- Сообщение для сотрудника
+      v_message := utl_lms.format_message(
+         entEMPLOYEES.C_MSG_EMPLT_GREET_EMP_TXT
+         --'Уважаемый %s %s! Вы приняты в качестве %s в подразделение %s.'
+         , TO_CHAR(rec.first_name)
+         , TO_CHAR(rec.last_name)
+         , TO_CHAR(rec.job_title)
+         , TO_CHAR(rec.department_name)
+       );
+       -- Если есть руководитель, ссылка на него
+       if rec.mgr_last_name is not null then
+         v_message := v_message || ' ' || utl_lms.format_message(
+           entEMPLOYEES.C_MSG_EMPLT_GREET_EMP_TXT2
+           --'Ваш руководитель: %s %s %s.'
+           , TO_CHAR(rec.mgr_job_title)
+           , TO_CHAR(rec.mgr_first_name)
+           , TO_CHAR(rec.mgr_last_name)
+         );
+       end if;
+       
+      -- Отправляем почту новому сотруднику
       entEMPLOYEES.message_ins(
-          p_msg_text  => v_mgr_msg
+          p_msg_text  => v_message
          ,p_msg_type  => p_msg_type
-         ,p_dest_addr => v_mgr_addr);
-    end if;
-
-    -- Отправляем почту новому сотруднику
-    entEMPLOYEES.message_ins(
-        p_msg_text  => v_emp_msg
-       ,p_msg_type  => p_msg_type
-       ,p_dest_addr => v_emp_addr);
+         ,p_dest_addr => rec.emp_addr);
+       
+    end loop; -- Данные сотрудника
 
   end EMPLOYMENT;
 
@@ -514,6 +428,28 @@ create or replace package body entEMPLOYEES is
       v_row.salary       := v_salary;
       tabEMPLOYEES.upd(p_row => v_row);
 
+/*
+      -- Получим тексты сообщений и, адрес руководителя и сотрудника
+      select entEMPLOYEES.get_greeting_mgr_text(v_row.employee_id) as mgr_msg
+            ,decode(p_msg_type, С_MSG_TYPE_EMAIL, em.mgr_email, em.mgr_phone_number) -- телефон или email руководителя
+            ,decode(p_msg_type, С_MSG_TYPE_EMAIL, em.email, em.phone_number) -- телефон или email сотрудника
+        into v_mgr_msg, v_mgr_addr, v_emp_addr
+        from dual
+        left join VW_EMPLOYEES em
+          on em.employee_id = p_employee_id;
+
+      dbms_output.put_line('  v_mgr_addr = ' || v_mgr_addr); --< Для отладки
+      dbms_output.put_line('  v_emp_addr = ' || v_emp_addr); --< Для отладки
+
+      if v_mgr_addr is not null then
+        -- Отправляем почту руководителю сотрудника
+        entEMPLOYEES.message_ins(
+            p_msg_text  => v_mgr_msg
+           ,p_msg_type  => p_msg_type
+           ,p_dest_addr => v_mgr_addr);
+      end if;
+      */
+      
     end loop;
   end PAYRISE; 
   
