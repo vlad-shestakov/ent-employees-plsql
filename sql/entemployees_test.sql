@@ -284,6 +284,8 @@ create or replace package body entEMPLOYEES_TEST is
     end loop; -- Конец перебора
 
   end;
+  
+  
   ---------------------------------------------------------------
   procedure MESSAGE_INS_T
   -- Создаем сообщение в очереди
@@ -319,6 +321,76 @@ create or replace package body entEMPLOYEES_TEST is
 
 
   ---------------------------------------------------------------
+  procedure PAYRISE_T
+  -- Повышаем оклад - ОШИБКА
+  is
+    v_id      employees.employee_id%type := 108;
+  begin
+    
+    dbms_output.put_line('Повышает оклад сотрудника, возвращает ошибку, слишком большое повышение'); --< Для отладки
+    dbms_output.put_line('Payrise EMP'); --< Для отладки
+      
+    begin -- exception block
+      
+      entEMPLOYEES.PAYRISE(p_employee_id => v_id
+                          ,p_salary => entEMPLOYEES.С_EMP_MAX_SALARY + 10000);
+
+    exception
+      when entEMPLOYEES.EX_PAYRISE_EMP_SALARY_EXCCESS then
+        dbms_output.put_line(utl_lms.format_message('OK ERROR - (%s): %s',TO_CHAR(sqlcode),TO_CHAR(sqlerrm)));
+    end;
+
+  end;
+  
+  ---------------------------------------------------------------
+  procedure PAYRISE_T2
+  -- Повышаем оклад
+  is
+    v_id      employees.employee_id%type := 108;
+    v_row EMPLOYEES%rowtype;
+  begin
+    
+    dbms_output.put_line('Повышает оклад сотрудника, + 10%'); --< Для отладки
+    dbms_output.put_line('Payrise EMP'); --< Для отладки
+      
+    tabEMPLOYEES.sel(p_id => v_id, p_row => v_row);
+    dbms_output.put_line('v_row.employee_id = ' || v_row.employee_id);
+    dbms_output.put_line('v_row.salary = ' || v_row.salary);
+
+    entEMPLOYEES.PAYRISE(p_employee_id => v_id
+                        --,p_salary => entEMPLOYEES.С_EMP_MAX_SALARY + 10000
+                        );
+
+    tabEMPLOYEES.sel(p_id => v_id, p_row => v_row);
+    dbms_output.put_line('NEW v_row.salary = ' || v_row.salary);
+
+  end;
+  
+  ---------------------------------------------------------------
+  procedure PAYRISE_T3
+  -- Повышаем оклад
+  is
+    v_id      employees.employee_id%type := 108;
+    v_row EMPLOYEES%rowtype;
+  begin
+    
+    dbms_output.put_line('Повышает оклад сотрудника - 150 000 '); --< Для отладки
+    dbms_output.put_line('Payrise EMP'); --< Для отладки
+      
+    tabEMPLOYEES.sel(p_id => v_id, p_row => v_row);
+    dbms_output.put_line('v_row.employee_id = ' || v_row.employee_id);
+    dbms_output.put_line('v_row.salary = ' || v_row.salary);
+    
+    entEMPLOYEES.PAYRISE(p_employee_id => v_id
+                        ,p_salary => 150000
+                        );
+
+    tabEMPLOYEES.sel(p_id => v_id, p_row => v_row);
+    dbms_output.put_line('NEW v_row.salary = ' || v_row.salary);
+
+  end;
+  
+  ---------------------------------------------------------------
   procedure runall
   -- Все тесты
    is
@@ -349,6 +421,18 @@ create or replace package body entEMPLOYEES_TEST is
       dbms_output.put_line('');
       dbms_output.put_line('Тест - EMPLOYMENT_T4');
       EMPLOYMENT_T4;
+
+      dbms_output.put_line('');
+      dbms_output.put_line('Тест - PAYRISE_T');
+      PAYRISE_T;
+
+      dbms_output.put_line('');
+      dbms_output.put_line('Тест - PAYRISE_T2');
+      PAYRISE_T2;
+
+      dbms_output.put_line('');
+      dbms_output.put_line('Тест - PAYRISE_T3');
+      PAYRISE_T3;
 
     exception
       when others then

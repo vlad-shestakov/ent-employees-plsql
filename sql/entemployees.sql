@@ -9,6 +9,9 @@ create or replace package entEMPLOYEES is
   -- КОНСТАНТЫ
 
 
+    С_EMP_SALARY_PAYRISE_KOEFF   CONSTANT number(8,2) := 1.1
+    -- Коэффициент повышения оклада сотрудника
+    ;
     С_EMP_MAX_SALARY   CONSTANT employees.salary%type := 350000
     -- Максимальный оклад сотрудника
     ;
@@ -44,7 +47,7 @@ create or replace package entEMPLOYEES is
 
     -- Ошибка  -20102 Превышение максимального оклада сотрудника
     EX_PAYRISE_EMP_SALARY_EXCCESS     exception;
-    EX_PAYRISE_EMP_SALARY_EXCCESS_MSG constant varchar2(400) := 'Превышение максимального оклада сотрудника';
+    EX_PAYRISE_EMP_SALARY_EXCCESS_MSG constant varchar2(400) := 'Превышение максимального оклада сотрудника (%s)';
     pragma exception_init(EX_PAYRISE_EMP_SALARY_EXCCESS, -20102);
 
   ---------------------------------------------------------------
@@ -160,7 +163,8 @@ create or replace package entEMPLOYEES is
   procedure PAYRISE
   (
     p_employee_id            in employees.employee_id%type
-   ,p_salary                 in employees.salary%type
+   ,p_salary                 in employees.salary%type default null 
+
   )
   /*
     Процедура реализует повышение оклада сотруднику
@@ -439,14 +443,12 @@ create or replace package body entEMPLOYEES is
     -- Получим тексты сообщений и, адрес руководителя и сотрудника
     select entEMPLOYEES.get_greeting_emp_text(v_row.employee_id) as emp_msg
           ,entEMPLOYEES.get_greeting_mgr_text(v_row.employee_id) as mgr_msg
-          ,decode(p_msg_type, С_MSG_TYPE_EMAIL, emg.email, emg.phone_number) -- телефон или email руководителя
-          ,decode(p_msg_type, С_MSG_TYPE_EMAIL, v_row.email, v_row.phone_number) -- телефон или email сотрудника
+          ,decode(p_msg_type, С_MSG_TYPE_EMAIL, em.mgr_email, em.mgr_phone_number) -- телефон или email руководителя
+          ,decode(p_msg_type, С_MSG_TYPE_EMAIL, em.email, em.phone_number) -- телефон или email сотрудника
       into v_emp_msg, v_mgr_msg, v_mgr_addr, v_emp_addr
       from dual
-      left join EMPLOYEES em
-        on em.employee_id = v_row.employee_id
-      left join EMPLOYEES emg
-        on emg.employee_id = em.manager_id;
+      left join VW_EMPLOYEES em
+        on em.employee_id = v_row.employee_id;
 
     dbms_output.put_line('  v_mgr_addr = ' || v_mgr_addr); --< Для отладки
     dbms_output.put_line('  v_emp_addr = ' || v_emp_addr); --< Для отладки
@@ -472,7 +474,7 @@ create or replace package body entEMPLOYEES is
   procedure PAYRISE
   (
     p_employee_id            in employees.employee_id%type
-   ,p_salary                 in employees.salary%type
+   ,p_salary                 in employees.salary%type default null 
   )
   /*
     Процедура реализует повышение оклада сотруднику
@@ -487,8 +489,32 @@ create or replace package body entEMPLOYEES is
       В случае превышения максимального оклада по должности (MAX_SALARY)
   /**/
   is
+    v_salary   employees.salary%type;
+    v_row EMPLOYEES%rowtype;
   begin
-    null;
+    
+    -- Получим сотрудника
+    for rec in (--
+                select *
+                  from VW_EMPLOYEES em
+                 where 1=1
+                   and em.employee_id = p_employee_id
+               )
+    loop
+      v_salary := round(nvl(p_salary, rec.salary * entEMPLOYEES.С_EMP_SALARY_PAYRISE_KOEFF), 2);
+           
+      if v_salary > entEMPLOYEES.С_EMP_MAX_SALARY then
+        RAISE_APPLICATION_ERROR(-20102, utl_lms.format_message(EX_PAYRISE_EMP_SALARY_EXCCESS_MSG, to_char(p_employee_id)));
+      end if;
+
+      -- Получаем сотрудника
+      tabEMPLOYEES.sel(p_id => p_employee_id, p_row => v_row);
+
+      -- Обновляем данные
+      v_row.salary       := v_salary;
+      tabEMPLOYEES.upd(p_row => v_row);
+
+    end loop;
   end PAYRISE; 
   
 end entEMPLOYEES;
