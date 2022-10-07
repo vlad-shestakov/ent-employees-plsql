@@ -1,4 +1,4 @@
-﻿prompt PL/SQL Developer Export Tables for user TST@169.254.218.131/XEPDB1
+﻿prompt PL/SQL Developer Export Tables for user HR@169.254.218.131/XEPDB1
 prompt Created by User on 7 Октябрь 2022 г.
 set feedback off
 set define off
