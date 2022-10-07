@@ -1,7 +1,7 @@
 ﻿create sequence EMPLOYEES_SEQ
 minvalue 1
 maxvalue 9999999999999999999999999999
-start with 818
+start with 824
 increment by 1
 nocache;
 
