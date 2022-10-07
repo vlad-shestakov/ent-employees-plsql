@@ -1,4 +1,4 @@
-﻿create or replace package entEMPLOYEES_TEST is
+create or replace package entEMPLOYEES_TEST is
 
   -- Author  : VSHESTAKOV
   -- Created : 07.10.2022 2:59:59
@@ -22,7 +22,6 @@
 
 end entEMPLOYEES_TEST;
 /
-
 create or replace package body entEMPLOYEES_TEST is
 
   --------------------------------------------------------------- 
@@ -41,8 +40,8 @@ create or replace package body entEMPLOYEES_TEST is
       from dual;
   
     dbms_output.put_line('v_emp_msg = ' || v_emp_msg);
-    dbms_output.put_line('C_GREETING_EMP_TEXT = ' || entEMPLOYEES.C_GREETING_EMP_TEXT);
-    dbms_output.put_line('C_GREETING_EMP_TEXT2 = ' || entEMPLOYEES.C_GREETING_EMP_TEXT2);
+    dbms_output.put_line('C_MSG_EMPLT_GREET_TEXT = ' || entEMPLOYEES.C_MSG_EMPLT_GREET_TEXT);
+    dbms_output.put_line('C_MSG_EMPLT_GREET_TEXT2 = ' || entEMPLOYEES.C_MSG_EMPLT_GREET_TEXT2);
     
     dbms_output.put_line('');
     dbms_output.put_line('v_mgr_msg = ' || v_mgr_msg);
@@ -362,4 +361,3 @@ create or replace package body entEMPLOYEES_TEST is
 
 end entEMPLOYEES_TEST;
 /
-
