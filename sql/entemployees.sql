@@ -22,10 +22,17 @@ create or replace package entEMPLOYEES is
     -- Уважаемый < FIRST_NAME > < LAST_NAME >! Вы приняты в качестве < JOB_TITLE > в подразделение < DEPARTMENT_NAME >.
     -- Ваш руководитель: < JOB_TITLE > < FIRST_NAME > < LAST_NAME >”.
 
+
     -- Текст сообщения для руководителя нового работника
     C_MSG_EMPLT_GREET_MGR_TXT constant messages.msg_text%type :=  'Уважаемый %s %s! В ваше подразделение принят новый сотрудник %s %s в должности %s с окладом %s.';
     -- Уважаемый < FIRST_NAME > < LAST_NAME >! В ваше подразделение принят новый сотрудник < FIRST_NAME > < LAST_NAME > в должности < JOB_TITLE > с окладом < SALARY >.
 
+
+    -- Текст сообщения для руководителя нового работника
+    C_MSG_LEAVE_MGR_TXT constant messages.msg_text%type :=  'Уважаемый %s %s! Из вашего подразделения уволен сотрудник %s %s с должности %s.';
+    -- Уважаемый < FIRST_NAME > < LAST_NAME >! Из вашего подразделения уволен сотрудник < FIRST_NAME > < LAST_NAME > с должности < JOB_TITLE >.” 
+    
+    
     -- Текст сообщения. Повышение зп сотрудника для руководителя
     C_MSG_PAYRISE_MGR_TXT constant messages.msg_text%type :=  'Уважаемый %s %s! Вашему сотруднику %s %s увеличен оклад с %s до %s.';
     -- Уважаемый < FIRST_NAME > < LAST_NAME >! Вашему сотруднику < FIRST_NAME > < LAST_NAME > увеличен оклад с < SALARY old > до < SALARY new >.
@@ -152,6 +159,25 @@ create or replace package entEMPLOYEES is
       В случае превышения максимального оклада по должности (MAX_SALARY)
   /**/
   ;
+  
+  ---------------------------------------------------------------
+  procedure LEAVE
+  (
+    p_employee_id            in employees.employee_id%type
+   ,p_msg_type               in messages.msg_type%type      := С_MSG_TYPE_EMAIL -- Тип сообщения для отправки sms / email
+  )
+  /*
+    Процедура реализует увольнение сотрудника
+    - Для увольнения в таблице EMPLOYEES чистим значение поля DEPARTMENT_ID. 
+    - Создать новое сообщение для руководителя сотрудника
+    
+    ПАРАМЕТРЫ
+       p_employee_id      - Код сотрудника
+      ,p_msg_type         - Тип сообщения для отправки sms / email
+
+  /**/
+  ;
+
 
 end entEMPLOYEES;
 /
@@ -415,7 +441,6 @@ create or replace package body entEMPLOYEES is
     -- Получим сотрудника
     for rec in (-- Получим тексты сообщений и, адрес руководителя и сотрудника
                 select decode(p_msg_type, С_MSG_TYPE_EMAIL, em.mgr_email, em.mgr_phone_number) as mgr_addr -- телефон или email руководителя
-                      ,decode(p_msg_type, С_MSG_TYPE_EMAIL, em.email, em.phone_number)         as emp_addr -- телефон или email сотрудника
                       ,em.*
                   from VW_EMPLOYEES em
                  where 1=1
@@ -458,6 +483,68 @@ create or replace package body entEMPLOYEES is
       
     end loop;
   end PAYRISE; 
+
+
+  ---------------------------------------------------------------
+  procedure LEAVE
+  (
+    p_employee_id            in employees.employee_id%type
+   ,p_msg_type               in messages.msg_type%type      := С_MSG_TYPE_EMAIL -- Тип сообщения для отправки sms / email
+  )
+  /*
+    Процедура реализует увольнение сотрудника
+    - Для увольнения в таблице EMPLOYEES чистим значение поля DEPARTMENT_ID. 
+    - Создать новое сообщение для руководителя сотрудника
+    
+    ПАРАМЕТРЫ
+       p_employee_id      - Код сотрудника
+      ,p_msg_type         - Тип сообщения для отправки sms / email
+
+  /**/
+  is
+    v_row         employees%rowtype;
+    v_message     messages.msg_text%type;
+    v_mgr_addr     employees.email%type;
+  begin
+    
+    -- Получим сотрудника
+    for rec in (-- Получим тексты сообщений и, адрес руководителя
+                select decode(p_msg_type, С_MSG_TYPE_EMAIL, em.mgr_email, em.mgr_phone_number) as mgr_addr -- телефон или email руководителя
+                      ,em.*
+                  from VW_EMPLOYEES em
+                 where 1=1
+                   and em.employee_id = p_employee_id
+               )
+    loop
+      v_mgr_addr := rec.mgr_addr;
+      v_message := utl_lms.format_message(
+         entEMPLOYEES.C_MSG_LEAVE_MGR_TXT
+         --'Уважаемый %s %s! Из вашего подразделения уволен сотрудник %s %s с должности %s.'
+         , TO_CHAR(rec.mgr_first_name)
+         , TO_CHAR(rec.mgr_last_name)
+         , TO_CHAR(rec.first_name)
+         , TO_CHAR(rec.last_name)
+         , TO_CHAR(rec.job_title)
+       );
+    end loop;
+    
+    -- Получаем сотрудника
+    tabEMPLOYEES.sel(p_id => p_employee_id, p_row => v_row);
+
+    -- Увольняем сотрудника
+    -- Обновляем данные
+    v_row.department_id       := null;
+    tabEMPLOYEES.upd(p_row => v_row);
+    
+    -- Отправляем почту руководителю сотрудника
+    if v_mgr_addr is not null then
+      entEMPLOYEES.message_ins(
+          p_msg_text  => v_message
+         ,p_msg_type  => p_msg_type
+         ,p_dest_addr => v_mgr_addr);
+    end if;
+      
+  end LEAVE;
   
 end entEMPLOYEES;
 /
