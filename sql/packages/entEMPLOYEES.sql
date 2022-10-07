@@ -8,7 +8,7 @@ create or replace package entEMPLOYEES is
   --------------------------------------------------------------- 
   -- КОНСТАНТЫ
   
-    -- Текст сообщения для вновь принятого работника
+    -- Текст сообщения для нового работника
     C_GREETING_EMP_TEXT constant messages.msg_text%type :=  'Уважаемый %s %s! Вы приняты в качестве %s в подразделение %s.';
     C_GREETING_EMP_TEXT2 constant messages.msg_text%type :=  'Ваш руководитель: %s %s %s.';
     -- Уважаемый < FIRST_NAME > < LAST_NAME >! Вы приняты в качестве < JOB_TITLE > в подразделение < DEPARTMENT_NAME >. 
@@ -18,8 +18,11 @@ create or replace package entEMPLOYEES is
     C_GREETING_MGR_TEXT constant messages.msg_text%type :=  'Уважаемый %s %s! В ваше подразделение принят новый сотрудник %s %s в должности %s с окладом %s.';
     -- Уважаемый < FIRST_NAME > < LAST_NAME >! В ваше подразделение принят новый сотрудник < FIRST_NAME > < LAST_NAME > в должности < JOB_TITLE > с окладом < SALARY >.
     
-    -- Тип отправляемого сообщения
-    С_MSG_TYPE   CONSTANT messages.msg_type%type := 'email'; 
+    С_MSG_TYPE_EMAIL   CONSTANT messages.msg_type%type := 'email'; 
+    С_MSG_TYPE_SMS   CONSTANT messages.msg_type%type := 'sms'; 
+    С_MSG_TYPE_DEF   CONSTANT messages.msg_type%type := С_MSG_TYPE_EMAIL
+    -- Тип отправляемого сообщения по-умолчанию
+    ; 
     
   ---------------------------------------------------------------
   -- ОШИБКИ
@@ -27,12 +30,26 @@ create or replace package entEMPLOYEES is
     -- Ошибка  -20101 Не заполнены обязательные параметры (%s)
     EX_EMPLOYMENT_WR_PARAMS     exception;
     EX_EMPLOYMENT_WR_PARAMS_MSG constant varchar2(400) := 'Не заполнены обязательные параметры (%s)';
-    pragma exception_init(EX_EMPLOYMENT_WR_PARAMS, -20101); 
-        
+    pragma exception_init(EX_EMPLOYMENT_WR_PARAMS, -20101);
+    
     
     
   --------------------------------------------------------------- 
-  function get_greeting_emp_text
+  function GET_GREETING_MGR_TEXT
+  (
+    p_id  in employees.employee_id%type
+  )
+  return messages.msg_text%type
+  /*
+    Возвращяет текст сообщения для руководителя работника
+    
+    ПАРАМЕТРЫ
+      p_id - Код сотрудника
+  /**/
+  ;
+  
+  --------------------------------------------------------------- 
+  function GET_GREETING_EMP_TEXT
   (
     p_id  in employees.employee_id%type
   )
@@ -46,27 +63,14 @@ create or replace package entEMPLOYEES is
   ;
   
   --------------------------------------------------------------- 
-  function get_greeting_mgr_text
-  (
-    p_id  in employees.employee_id%type
-  )
-  return messages.msg_text%type
-  /* 
-    Возвращяет текст сообщения для руководителя работника
-    
-    ПАРАМЕТРЫ
-      p_id - Код сотрудника
-  /**/
-  ;
-  
-  --------------------------------------------------------------- 
-  procedure message_ins
+  procedure MESSAGE_INS
   (
     p_row    in MESSAGES%rowtype
    ,p_update in boolean := false
   )
   /* 
     Выполняет вставку новой строки MESSAGES 
+    Перегрузка по строке
     
     ПАРАМЕТРЫ
       p_row        - Данные вставляемой записи MESSAGES
@@ -79,21 +83,22 @@ create or replace package entEMPLOYEES is
   
   
   --------------------------------------------------------------- 
-  procedure message_ins
+  procedure MESSAGE_INS
   (
     p_msg_text  in messages.msg_text%type
-   ,p_msg_type  in messages.msg_type%type
    ,p_dest_addr in messages.dest_addr%type
+   ,p_msg_type  in messages.msg_type%type := С_MSG_TYPE_DEF
    ,p_msg_state in messages.msg_state%type := 0
    ,p_update    in boolean := false
   )
   /* 
     Выполняет вставку новой строки MESSAGES 
+    Перегрузка по фактическим полям
     
     ПАРАМЕТРЫ
       p_msg_text   - текст сообщения 
-     ,p_msg_type   - тип сообщения (email, sms и т.п.) 
      ,p_dest_addr  - адрес получателя сообщения (email, номер телефона) 
+     ,p_msg_type   - тип сообщения (email, sms и т.п.) 
      ,p_msg_state  - статус обработки сообщения внешней системой (0 - добавлено в очередь, 1 - успешно отправлено, -1 - отправлено с ошибкой) 
      ,p_update     
         true       - если строка с таким индексом уже существует, выполняется обновление данных. 
@@ -101,7 +106,7 @@ create or replace package entEMPLOYEES is
   ;
   
   --------------------------------------------------------------- 
-  procedure employment
+  procedure EMPLOYMENT
   (
     p_first_name             in employees.first_name%type
    ,p_last_name              in employees.last_name%type
@@ -112,11 +117,13 @@ create or replace package entEMPLOYEES is
    ,p_manager_id             in employees.manager_id%type
    ,p_salary                 in employees.salary%type
    ,p_commission_pct         in employees.commission_pct%type
+   ,p_msg_type               in messages.msg_type%type := С_MSG_TYPE_EMAIL -- Тип сообщения для отправки sms / email
   )
   /* 
     Процедура реализует функционал приема на работу нового сотрудника.
+    - Расчитывает оклад, если не указан
     - Добавляет запись в EMPLOYEES
-    - Создает сообщения типа email в таблице MESSAGES для работника и его руководителя
+    - Создает сообщения типа P_MSG_TYPE (email) в таблице MESSAGES для работника и его руководителя (если указан)
     
     ПАРАМЕТРЫ
        p_first_name       - Поля карточки EMPLOYEES
@@ -125,9 +132,11 @@ create or replace package entEMPLOYEES is
       ,p_phone_number         
       ,p_job_id               
       ,p_department_id
+      ,p_manager_id
       ,p_salary           - не обязательны для заполнения
       ,p_commission_pct     Если они пустые, при добавлении записи эти данные заполняются средними значениями 
                             по подразделению и штатной должности (JOB_ID, DEPARTMENT_ID)
+      ,p_msg_type         - Тип сообщения для отправки sms / email
                          
     ИСКЛЮЧЕНИЯ     
       исключения при нарушении ограничений на данные таблицы.
@@ -139,7 +148,7 @@ end entEMPLOYEES;
 create or replace package body entEMPLOYEES is
 
   --------------------------------------------------------------- 
-  -- Данные о вновьпринятом сотруднике и его руководителе
+  -- Данные о сотруднике и его руководителе
   cursor CUR_EMPLOYEE(c_employee_id in employees.employee_id%type) is
     select em.employee_id
           ,em.first_name
@@ -161,10 +170,10 @@ create or replace package body entEMPLOYEES is
       left join JOBS jmg
         on jmg.job_id = em.job_id
      where 1=1
-       and em.employee_id = c_employee_id;
+       and em.employee_id = C_EMPLOYEE_ID;
   
   ---------------------------------------------------------------    
-  -- Cредние зарплаты, комиссии по отделу
+  -- Cредние зарплаты, комиссии по отделу и должности
   cursor CUR_AVG_DEPT_SALARY(
     c_department_id in employees.department_id%type
    ,c_job_id        in employees.job_id%type
@@ -177,13 +186,13 @@ create or replace package body entEMPLOYEES is
           ,round(avg(em.commission_pct) over ( partition by em.department_id, em.job_id), 2) as avg_dept_commission_pct -- Средняя комиссия сотрудника по отделу
         from EMPLOYEES em
        where 1=1
-         and em.department_id = c_department_id
-         and em.job_id = c_job_id
+         and em.department_id = C_DEPARTMENT_ID
+         and em.job_id = C_JOB_ID
     ;/**/ 
     
     
   --------------------------------------------------------------- 
-  function get_greeting_mgr_text
+  function GET_GREETING_MGR_TEXT
   (
     p_id  in employees.employee_id%type
   )
@@ -214,7 +223,7 @@ create or replace package body entEMPLOYEES is
   end;   
   
   --------------------------------------------------------------- 
-  function get_greeting_emp_text
+  function GET_GREETING_EMP_TEXT
   (
     p_id  in employees.employee_id%type
   )
@@ -256,13 +265,14 @@ create or replace package body entEMPLOYEES is
   
   
   --------------------------------------------------------------- 
-  procedure message_ins
+  procedure MESSAGE_INS
   (
     p_row    in MESSAGES%rowtype
    ,p_update in boolean := false
   )
   /* 
     Выполняет вставку новой строки MESSAGES 
+    Перегрузка по строке
     
     ПАРАМЕТРЫ
       p_row        - Данные вставляемой записи MESSAGES
@@ -292,21 +302,22 @@ create or replace package body entEMPLOYEES is
   end message_ins;
   
   --------------------------------------------------------------- 
-  procedure message_ins
+  procedure MESSAGE_INS
   (
     p_msg_text  in messages.msg_text%type
-   ,p_msg_type  in messages.msg_type%type
    ,p_dest_addr in messages.dest_addr%type
+   ,p_msg_type  in messages.msg_type%type := С_MSG_TYPE_DEF
    ,p_msg_state in messages.msg_state%type := 0
    ,p_update    in boolean := false
   )
   /* 
     Выполняет вставку новой строки MESSAGES 
+    Перегрузка по фактическим полям
     
     ПАРАМЕТРЫ
       p_msg_text   - текст сообщения 
-     ,p_msg_type   - тип сообщения (email, sms и т.п.) 
      ,p_dest_addr  - адрес получателя сообщения (email, номер телефона) 
+     ,p_msg_type   - тип сообщения (email, sms и т.п.) 
      ,p_msg_state  - статус обработки сообщения внешней системой (0 - добавлено в очередь, 1 - успешно отправлено, -1 - отправлено с ошибкой) 
      ,p_update     
         true       - если строка с таким индексом уже существует, выполняется обновление данных. 
@@ -325,7 +336,7 @@ create or replace package body entEMPLOYEES is
   end message_ins;
   
   --------------------------------------------------------------- 
-  procedure employment
+  procedure EMPLOYMENT
   (
     p_first_name             in employees.first_name%type
    ,p_last_name              in employees.last_name%type
@@ -336,11 +347,13 @@ create or replace package body entEMPLOYEES is
    ,p_manager_id             in employees.manager_id%type
    ,p_salary                 in employees.salary%type
    ,p_commission_pct         in employees.commission_pct%type
+   ,p_msg_type               in messages.msg_type%type := С_MSG_TYPE_EMAIL -- Тип сообщения для отправки sms / email
   )
   /* 
     Процедура реализует функционал приема на работу нового сотрудника.
+    - Расчитывает оклад, если не указан
     - Добавляет запись в EMPLOYEES
-    - Создает сообщения типа email в таблице MESSAGES для работника и его руководителя
+    - Создает сообщения типа P_MSG_TYPE (email) в таблице MESSAGES для работника и его руководителя (если указан)
     
     ПАРАМЕТРЫ
        p_first_name       - Поля карточки EMPLOYEES
@@ -353,6 +366,7 @@ create or replace package body entEMPLOYEES is
       ,p_salary           - не обязательны для заполнения
       ,p_commission_pct     Если они пустые, при добавлении записи эти данные заполняются средними значениями 
                             по подразделению и штатной должности (JOB_ID, DEPARTMENT_ID)
+      ,p_msg_type         - Тип сообщения для отправки sms / email
                          
     ИСКЛЮЧЕНИЯ     
       исключения при нарушении ограничений на данные таблицы.
@@ -362,7 +376,8 @@ create or replace package body entEMPLOYEES is
     v_err        varchar2(250);
     v_emp_msg    messages.msg_text%type;
     v_mgr_msg    messages.msg_text%type;
-    v_mgr_email  messages.dest_addr%type;
+    v_mgr_addr   messages.dest_addr%type;
+    v_emp_addr   messages.dest_addr%type;
   begin
     
     -- Проверка на обязательные параметры
@@ -374,9 +389,6 @@ create or replace package body entEMPLOYEES is
     if v_err is not null then 
       RAISE_APPLICATION_ERROR(-20101, utl_lms.format_message(EX_EMPLOYMENT_WR_PARAMS_MSG, v_err)); 
     end if;
-    
-    --dbms_output.put_line('p_salary = ' || p_salary); --< Для отладки 
-    --dbms_output.put_line('p_commission_pct = ' || p_commission_pct); --< Для отладки 
     
     v_row.employee_id     := EMPLOYEES_SEQ.Nextval;
     v_row.first_name      := p_first_name;
@@ -396,47 +408,44 @@ create or replace package body entEMPLOYEES is
       -- Получим размер зп, или комиссии из среднего по отделу и должности
       for rec in CUR_AVG_DEPT_SALARY(p_department_id, p_job_id)
       loop 
-        --dbms_output.put_line('rec.avg_dept_salary = ' || rec.avg_dept_salary); --< Для отладки 
-        --dbms_output.put_line('rec.avg_dept_commission_pct = ' || rec.avg_dept_commission_pct); --< Для отладки 
         v_row.salary          := nvl(p_salary, rec.avg_dept_salary);
         v_row.commission_pct  := nvl(p_commission_pct, rec.avg_dept_commission_pct);
       end loop; 
     end if;
     
-    --dbms_output.put_line('v_row.employee_id = ' || v_row.employee_id); --< Для отладки 
-    
     -- Создаем сотрудика
     tabEMPLOYEES.ins(p_row => v_row);
     
-    -- Получим тексты сообщений и почту руководителя
+    -- Получим тексты сообщений и, адрес руководителя и сотрудника
     select entEMPLOYEES.get_greeting_emp_text(v_row.employee_id) as emp_msg
           ,entEMPLOYEES.get_greeting_mgr_text(v_row.employee_id) as mgr_msg
-          ,emg.email 
-      into v_emp_msg, v_mgr_msg, v_mgr_email
+          ,decode(p_msg_type, С_MSG_TYPE_EMAIL, emg.email, emg.phone_number) -- телефон или email руководителя
+          ,decode(p_msg_type, С_MSG_TYPE_EMAIL, v_row.email, v_row.phone_number) -- телефон или email сотрудника
+      into v_emp_msg, v_mgr_msg, v_mgr_addr, v_emp_addr
       from dual
       left join EMPLOYEES em
         on em.employee_id = v_row.employee_id
       left join EMPLOYEES emg
         on emg.employee_id = em.manager_id;
     
-    --dbms_output.put_line('v_row.employee_id = ' || v_row.employee_id); --< Для отладки 
-    --dbms_output.put_line('v_mgr_email = ' || v_mgr_email); --< Для отладки 
+    dbms_output.put_line('  v_mgr_addr = ' || v_mgr_addr); --< Для отладки 
+    dbms_output.put_line('  v_emp_addr = ' || v_emp_addr); --< Для отладки 
     
-    if v_mgr_email is not null then 
+    if v_mgr_addr is not null then 
       -- Отправляем почту руководителю сотрудника
       entEMPLOYEES.message_ins(
           p_msg_text  => v_mgr_msg
-         ,p_msg_type  => С_MSG_TYPE
-         ,p_dest_addr => v_mgr_email);
+         ,p_msg_type  => p_msg_type
+         ,p_dest_addr => v_mgr_addr);
     end if;
     
     -- Отправляем почту новому сотруднику
     entEMPLOYEES.message_ins(
         p_msg_text  => v_emp_msg
-       ,p_msg_type  => С_MSG_TYPE
-       ,p_dest_addr => v_row.email);
+       ,p_msg_type  => p_msg_type
+       ,p_dest_addr => v_emp_addr);
        
-  end employment; 
+  end EMPLOYMENT; 
   
 end entEMPLOYEES;
 /
