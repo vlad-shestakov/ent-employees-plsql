@@ -110,15 +110,18 @@ create or replace package body entEMPLOYEES_TEST is
 
 
     -- Найдем сообщение
-    dbms_output.put_line('Find messages:'); --< Для отладки
+    dbms_output.put_line('Find messages...'); --< Для отладки 
     for rec in (--
-                select m.*
-                  from MESSAGES m
+                select m2.*
+                  from MESSAGES m2
                  where 1=1
-                   and m.msg_type = v_msg_type
-                   and m.dest_addr in (v_dest_addr, v_dest_addr2)
-                   --and rownum <= 1
-                 order by 1 desc
+                   and m2.id in (--
+                                select max(m.id)
+                                  from MESSAGES m
+                                 where 1=1
+                                   and m.msg_type = v_msg_type
+                                   and m.dest_addr in (v_dest_addr, v_dest_addr2)
+                       )
                )
     loop
       dbms_output.put_line('  id = ' || rec.id);
@@ -175,15 +178,18 @@ create or replace package body entEMPLOYEES_TEST is
 
 
     -- Найдем сообщение
-    dbms_output.put_line('Find messages:'); --< Для отладки
+    dbms_output.put_line('Find messages...'); --< Для отладки 
     for rec in (--
-                select m.*
-                  from MESSAGES m
+                select m2.*
+                  from MESSAGES m2
                  where 1=1
-                   and m.msg_type = v_msg_type
-                   and m.dest_addr in (v_dest_addr, v_dest_addr2)
-                   --and rownum <= 1
-                 order by 1 desc
+                   and m2.id in (--
+                                select max(m.id)
+                                  from MESSAGES m
+                                 where 1=1
+                                   and m.msg_type = v_msg_type
+                                   and m.dest_addr in (v_dest_addr, v_dest_addr2)
+                       )
                )
     loop
       dbms_output.put_line('  id = ' || rec.id);
@@ -243,15 +249,18 @@ create or replace package body entEMPLOYEES_TEST is
 
 
     -- Найдем сообщение
-    dbms_output.put_line('Find messages:'); --< Для отладки
+    dbms_output.put_line('Find messages...'); --< Для отладки 
     for rec in (--
-                select m.*
-                  from MESSAGES m
+                select m2.*
+                  from MESSAGES m2
                  where 1=1
-                   and m.msg_type = v_msg_type
-                   and m.dest_addr in (v_dest_addr, v_dest_addr2, v_dest_addr3)
-                   --and rownum <= 1
-                 order by 1 desc
+                   and m2.id in (--
+                                select max(m.id)
+                                  from MESSAGES m
+                                 where 1=1
+                                   and m.msg_type = v_msg_type
+                                   and m.dest_addr in (v_dest_addr, v_dest_addr2, v_dest_addr3)
+                       )
                )
     loop
       dbms_output.put_line('  id = ' || rec.id);
@@ -267,11 +276,9 @@ create or replace package body entEMPLOYEES_TEST is
   procedure MESSAGE_INS_T
   -- Создаем сообщение в очереди
   is
-    v_msg_type  MESSAGES.msg_type%type;
-    v_dest_addr MESSAGES.dest_addr%type;
+    v_msg_type  MESSAGES.msg_type%type  := 'sms';
+    v_dest_addr MESSAGES.dest_addr%type := 'abc@def.com3';
   begin
-    v_msg_type := 'sms';
-    v_dest_addr := 'abc@def.com3';
 
     entEMPLOYEES.message_ins(
         p_msg_text  => 'Уважаемый Neena Kochhar! В ваше подразделение принят новый сотрудник Nancy Greenberg в должности Finance Manager с окладом 12008.'
@@ -279,14 +286,18 @@ create or replace package body entEMPLOYEES_TEST is
        ,p_dest_addr => v_dest_addr);
 
     -- Найдем сообщение
+    dbms_output.put_line('Find messages...'); --< Для отладки 
     for rec in (--
-                select m.*
-                  from MESSAGES m
+                select m2.*
+                  from MESSAGES m2
                  where 1=1
-                   and m.msg_type = v_msg_type
-                   and m.dest_addr = v_dest_addr
-                   and rownum <= 1
-                 order by 1 desc
+                   and m2.id in (--
+                                select max(m.id)
+                                  from MESSAGES m
+                                 where 1=1
+                                   and m.msg_type = v_msg_type
+                                   and m.dest_addr = v_dest_addr
+                       )
                )
     loop
       dbms_output.put_line('id = ' || rec.id);
@@ -347,8 +358,10 @@ create or replace package body entEMPLOYEES_TEST is
   procedure PAYRISE_T3
   -- Повышаем оклад
   is
-    v_id      employees.employee_id%type := 108;
-    v_row EMPLOYEES%rowtype;
+    v_id        EMPLOYEES.employee_id%type := 108;
+    v_row       EMPLOYEES%rowtype;
+    v_msg_type  MESSAGES.msg_type%type     := 'email';
+    v_dest_addr MESSAGES.dest_addr%type    := 'NKOCHHAR';
   begin
     
     dbms_output.put_line('Повышает оклад сотрудника - 150 000 '); --< Для отладки
@@ -364,6 +377,28 @@ create or replace package body entEMPLOYEES_TEST is
 
     tabEMPLOYEES.sel(p_id => v_id, p_row => v_row);
     dbms_output.put_line('NEW v_row.salary = ' || v_row.salary);
+
+
+    -- Найдем сообщение
+    dbms_output.put_line('Find messages...'); --< Для отладки 
+    for rec in (--
+                select m2.*
+                  from MESSAGES m2
+                 where 1=1
+                   and m2.id in (--
+                                select max(m.id)
+                                  from MESSAGES m
+                                 where 1=1
+                                   and m.msg_type = v_msg_type
+                                   and m.dest_addr = v_dest_addr
+                       )
+               )
+    loop
+      dbms_output.put_line('id = ' || rec.id);
+      dbms_output.put_line('rec.p_msg_text = ' || rec.msg_text);
+      dbms_output.put_line('rec.msg_state  = ' || rec.msg_state);
+    end loop; -- Конец перебора
+
 
   end;
   

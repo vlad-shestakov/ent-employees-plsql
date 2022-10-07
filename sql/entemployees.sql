@@ -136,7 +136,7 @@ create or replace package entEMPLOYEES is
   (
     p_employee_id            in employees.employee_id%type
    ,p_salary                 in employees.salary%type default null 
-
+   ,p_msg_type               in messages.msg_type%type := С_MSG_TYPE_EMAIL -- Тип сообщения для отправки sms / email
   )
   /*
     Процедура реализует повышение оклада сотруднику
@@ -146,6 +146,7 @@ create or replace package entEMPLOYEES is
     ПАРАМЕТРЫ
        p_employee_id      - Код сотрудника
       ,p_salary           - Новый оклад (не обязательно)
+      ,p_msg_type         - Тип сообщения для отправки sms / email
 
     ИСКЛЮЧЕНИЯ
       В случае превышения максимального оклада по должности (MAX_SALARY)
@@ -389,6 +390,7 @@ create or replace package body entEMPLOYEES is
   (
     p_employee_id            in employees.employee_id%type
    ,p_salary                 in employees.salary%type default null 
+   ,p_msg_type               in messages.msg_type%type := С_MSG_TYPE_EMAIL -- Тип сообщения для отправки sms / email
   )
   /*
     Процедура реализует повышение оклада сотруднику
@@ -398,25 +400,31 @@ create or replace package body entEMPLOYEES is
     ПАРАМЕТРЫ
        p_employee_id      - Код сотрудника
       ,p_salary           - Новый оклад (не обязательно)
+      ,p_msg_type         - Тип сообщения для отправки sms / email
 
     ИСКЛЮЧЕНИЯ
       В случае превышения максимального оклада по должности (MAX_SALARY)
   /**/
   is
-    v_salary   employees.salary%type;
-    v_row EMPLOYEES%rowtype;
+    v_salary_old  employees.salary%type;
+    v_salary      employees.salary%type;
+    v_row         employees%rowtype;
+    v_message     messages.msg_text%type;
   begin
     
     -- Получим сотрудника
-    for rec in (--
-                select *
+    for rec in (-- Получим тексты сообщений и, адрес руководителя и сотрудника
+                select decode(p_msg_type, С_MSG_TYPE_EMAIL, em.mgr_email, em.mgr_phone_number) as mgr_addr -- телефон или email руководителя
+                      ,decode(p_msg_type, С_MSG_TYPE_EMAIL, em.email, em.phone_number)         as emp_addr -- телефон или email сотрудника
+                      ,em.*
                   from VW_EMPLOYEES em
                  where 1=1
                    and em.employee_id = p_employee_id
                )
     loop
+      v_salary_old := rec.salary;
       v_salary := round(nvl(p_salary, rec.salary * entEMPLOYEES.С_EMP_SALARY_PAYRISE_KOEFF), 2);
-           
+        
       if v_salary > entEMPLOYEES.С_EMP_MAX_SALARY then
         RAISE_APPLICATION_ERROR(-20102, utl_lms.format_message(EX_PAYRISE_EMP_SALARY_EXCCESS_MSG, to_char(p_employee_id)));
       end if;
@@ -428,27 +436,25 @@ create or replace package body entEMPLOYEES is
       v_row.salary       := v_salary;
       tabEMPLOYEES.upd(p_row => v_row);
 
-/*
-      -- Получим тексты сообщений и, адрес руководителя и сотрудника
-      select entEMPLOYEES.get_greeting_mgr_text(v_row.employee_id) as mgr_msg
-            ,decode(p_msg_type, С_MSG_TYPE_EMAIL, em.mgr_email, em.mgr_phone_number) -- телефон или email руководителя
-            ,decode(p_msg_type, С_MSG_TYPE_EMAIL, em.email, em.phone_number) -- телефон или email сотрудника
-        into v_mgr_msg, v_mgr_addr, v_emp_addr
-        from dual
-        left join VW_EMPLOYEES em
-          on em.employee_id = p_employee_id;
-
-      dbms_output.put_line('  v_mgr_addr = ' || v_mgr_addr); --< Для отладки
-      dbms_output.put_line('  v_emp_addr = ' || v_emp_addr); --< Для отладки
-
-      if v_mgr_addr is not null then
-        -- Отправляем почту руководителю сотрудника
+      -- Отправляем почту руководителю сотрудника
+      if rec.mgr_addr is not null then
+          
+        v_message := utl_lms.format_message(
+           entEMPLOYEES.C_MSG_PAYRISE_MGR_TXT
+           --'Уважаемый %s %s! Вашему сотруднику %s %s увеличен оклад с %s до %s.'
+           , TO_CHAR(rec.mgr_first_name)
+           , TO_CHAR(rec.mgr_last_name)
+           , TO_CHAR(rec.first_name)
+           , TO_CHAR(rec.last_name)
+           , TO_CHAR(v_salary_old)
+           , TO_CHAR(v_salary)
+         );
+         
         entEMPLOYEES.message_ins(
-            p_msg_text  => v_mgr_msg
+            p_msg_text  => v_message
            ,p_msg_type  => p_msg_type
-           ,p_dest_addr => v_mgr_addr);
+           ,p_dest_addr => rec.mgr_addr);
       end if;
-      */
       
     end loop;
   end PAYRISE; 
