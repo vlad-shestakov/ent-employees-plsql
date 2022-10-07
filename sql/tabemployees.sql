@@ -1,4 +1,4 @@
-create or replace package tabEMPLOYEES is
+﻿create or replace package tabEMPLOYEES is
 
   -- Author  : VSHESTAKOV
   -- Created : 06.10.2022 17:15:18
@@ -8,18 +8,18 @@ create or replace package tabEMPLOYEES is
 
   ---------------------------------------------------------------
   -- КОНСТАНТЫ
-  
+
     С_MSG_TYPE_EMAIL   CONSTANT messages.msg_type%type := 'email';
     С_MSG_TYPE_SMS   CONSTANT messages.msg_type%type := 'sms';
     С_MSG_TYPE_DEF   CONSTANT messages.msg_type%type := С_MSG_TYPE_EMAIL
     -- Тип отправляемого сообщения по-умолчанию
     ;
-    
-    
-  --------------------------------------------------------------- 
+
+
+  ---------------------------------------------------------------
   -- КУРСОРЫ
-  
-    
+
+
     -- Cредние зарплаты, комиссии по отделу и должности
     cursor CUR_AVG_DEPT_SALARY(
       c_department_id in employees.department_id%type
@@ -36,13 +36,13 @@ create or replace package tabEMPLOYEES is
            and em.department_id = C_DEPARTMENT_ID
            and em.job_id = C_JOB_ID
     ;/**/
-    
+
   ---------------------------------------------------------------
   procedure JOB_SEL
   (
     p_job_id    in  JOBS.job_id %type
    ,p_row       out JOBS%rowtype
-   ,p_rase      in boolean := true
+   ,p_raise     in boolean := true
   )
   /*
     Процедура выполняет извлечение записи по ключу из таблицы JOBS
@@ -50,19 +50,19 @@ create or replace package tabEMPLOYEES is
     ПАРАМЕТРЫ
       p_id         - Код записи для таблицы JOBS
       p_row        - Возвращаемая запись JOBS
-      p_rase
+      p_raise
         true       - происходит вызов исключений
         false      - исключения игнорируются
 
   /**/
   ;
-  
+
   ---------------------------------------------------------------
   procedure DEPARTMENTS_SEL
   (
     p_department_id  in  DEPARTMENTS.department_id%type
    ,p_row            out DEPARTMENTS%rowtype
-   ,p_rase           in boolean := true
+   ,p_raise          in boolean := true
   )
   /*
     Процедура выполняет извлечение записи по ключу из таблицы DEPARTMENTS
@@ -70,13 +70,13 @@ create or replace package tabEMPLOYEES is
     ПАРАМЕТРЫ
       p_id         - Код записи для таблицы DEPARTMENTS
       p_row        - Возвращаемая запись DEPARTMENTS
-      p_rase
+      p_raise
         true       - происходит вызов исключений
         false      - исключения игнорируются
 
   /**/
   ;
-  
+
   ---------------------------------------------------------------
   procedure MESSAGE_INS
   (
@@ -118,14 +118,14 @@ create or replace package tabEMPLOYEES is
         true       - если строка с таким индексом уже существует, выполняется обновление данных.
   /**/
   ;
-  
+
   ---------------------------------------------------------------
   procedure SEL
   (
     p_id        in EMPLOYEES.EMPLOYEE_ID%type
    ,p_row       out EMPLOYEES%rowtype
    ,p_forUpdate in boolean := false
-   ,p_rase      in boolean := true
+   ,p_raise     in boolean := true
   )
   /*
     Процедура выполняет извлечение записи по ключу из таблицы EMPLOYEES
@@ -136,7 +136,7 @@ create or replace package tabEMPLOYEES is
       p_forUpdate
         true     - выполняется SELECT … FOR UPDATE
         false    - обычный SELECT
-      p_rase
+      p_raise
         true     - происходит вызов исключений
         false    - исключения игнорируются
 
@@ -209,6 +209,7 @@ create or replace package tabEMPLOYEES is
 
 end tabEMPLOYEES;
 /
+
 create or replace package body tabEMPLOYEES is
 
   ---------------------------------------------------------------
@@ -216,7 +217,7 @@ create or replace package body tabEMPLOYEES is
   (
     p_job_id    in  JOBS.job_id %type
    ,p_row       out JOBS%rowtype
-   ,p_rase      in boolean := true
+   ,p_raise     in boolean := true
   )
   /*
     Процедура выполняет извлечение записи по ключу из таблицы JOBS
@@ -224,7 +225,7 @@ create or replace package body tabEMPLOYEES is
     ПАРАМЕТРЫ
       p_id         - Код записи для таблицы JOBS
       p_row        - Возвращаемая запись JOBS
-      p_rase
+      p_raise
         true       - происходит вызов исключений
         false      - исключения игнорируются
 
@@ -232,7 +233,7 @@ create or replace package body tabEMPLOYEES is
   is
   begin
 
-    for rec in (-- 
+    for rec in (--
                 select j.*
                   from JOBS j
                  where j.job_id in p_job_id
@@ -244,18 +245,18 @@ create or replace package body tabEMPLOYEES is
   exception
     when others then
       -- Если флаг обработки исключений включен - обрабатываем
-      if p_rase then
+      if p_raise then
         raise;
       end if;
       -- Иначе - нет
   end JOB_SEL;
-  
+
   ---------------------------------------------------------------
   procedure DEPARTMENTS_SEL
   (
     p_department_id  in  DEPARTMENTS.department_id%type
    ,p_row            out DEPARTMENTS%rowtype
-   ,p_rase           in boolean := true
+   ,p_raise          in boolean := true
   )
   /*
     Процедура выполняет извлечение записи по ключу из таблицы DEPARTMENTS
@@ -263,7 +264,7 @@ create or replace package body tabEMPLOYEES is
     ПАРАМЕТРЫ
       p_id         - Код записи для таблицы DEPARTMENTS
       p_row        - Возвращаемая запись DEPARTMENTS
-      p_rase
+      p_raise
         true       - происходит вызов исключений
         false      - исключения игнорируются
 
@@ -271,7 +272,7 @@ create or replace package body tabEMPLOYEES is
   is
   begin
 
-    for rec in (-- 
+    for rec in (--
                 select d.*
                   from DEPARTMENTS d
                  where d.department_id in p_department_id
@@ -283,12 +284,12 @@ create or replace package body tabEMPLOYEES is
   exception
     when others then
       -- Если флаг обработки исключений включен - обрабатываем
-      if p_rase then
+      if p_raise then
         raise;
       end if;
       -- Иначе - нет
   end DEPARTMENTS_SEL;
-  
+
   ---------------------------------------------------------------
   procedure MESSAGE_INS
   (
@@ -367,7 +368,7 @@ create or replace package body tabEMPLOYEES is
     p_id        in EMPLOYEES.EMPLOYEE_ID%type
    ,p_row       out EMPLOYEES%rowtype
    ,p_forUpdate in boolean := false
-   ,p_rase      in boolean := true
+   ,p_raise     in boolean := true
   )
   /*
     Процедура выполняет извлечение записи по ключу из таблицы EMPLOYEES
@@ -378,7 +379,7 @@ create or replace package body tabEMPLOYEES is
       p_forUpdate
           true     - выполняется SELECT … FOR UPDATE
           false    - обычный SELECT
-      p_rase
+      p_raise
           true     - происходит вызов исключений
           false    - исключения игнорируются
 
@@ -417,7 +418,7 @@ create or replace package body tabEMPLOYEES is
   exception
     when others then
       -- Если флаг обработки исключений включен - обрабатываем
-      if p_rase then
+      if p_raise then
         raise;
       end if;
       -- Иначе - нет
@@ -546,3 +547,4 @@ create or replace package body tabEMPLOYEES is
 
 end tabEMPLOYEES;
 /
+

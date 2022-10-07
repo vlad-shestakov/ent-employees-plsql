@@ -1,7 +1,7 @@
 ﻿create sequence MESSAGES_SEQ
 minvalue 1
 maxvalue 9990
-start with 127
+start with 657
 increment by 1
 nocache;
 
