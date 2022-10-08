@@ -78,7 +78,7 @@ create or replace package body entEMPLOYEES_TEST is
   begin
     dbms_output.put_line('Создает сотрудника, со ссылкой на менеджера (отправит два сообщения на почту), оклад и процент не указаны (усредненные)'); --< Для отладки
 
-    v_dest_addr  := 'employment_t2';
+    v_dest_addr  := 'employment_t2_' || to_char(trunc(dbms_random.value(1,10000+1)));
     v_dest_addr2 := 'NGREENBE';
 
     dbms_output.put_line('Create EMP'); --< Для отладки
@@ -148,7 +148,7 @@ create or replace package body entEMPLOYEES_TEST is
   begin
     dbms_output.put_line('Создает сотрудника, без ссылки на менеджера (отправит только одно сообщение на почту), с фиксированным окладом'); --< Для отладки
 
-    v_dest_addr  := 'employment_t3';
+    v_dest_addr  := 'employment_t3_' || to_char(trunc(dbms_random.value(1,10000+1)));
     v_dest_addr2 := '';
 
     dbms_output.put_line('Create EMP'); --< Для отладки
@@ -218,7 +218,7 @@ create or replace package body entEMPLOYEES_TEST is
   begin
     dbms_output.put_line('Создает сотрудника со ссылкой на менеджера (отправит два сообщения SMS), с фиксированным окладом'); --< Для отладки
 
-    v_dest_addr  := 'employment_t4';
+    v_dest_addr  := 'employment_t4_' || to_char(trunc(dbms_random.value(1,10000+1)));
     v_dest_addr2 := '515.124.4569'; -- NGREENBE
     v_dest_addr3  := '+7804650';
 

@@ -11,7 +11,7 @@
   commission_pct NUMBER(2,2),
   manager_id     NUMBER(6),
   department_id  NUMBER(4),
-  upd_counter    NUMBER not null,
+  upd_counter    INTEGER not null,
   crt_user       VARCHAR2(64),
   crt_date       DATE,
   upd_user       VARCHAR2(64),

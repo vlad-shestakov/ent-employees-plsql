@@ -34,8 +34,8 @@
 
 
     -- Текст сообщения. Повышение зп сотрудника для руководителя
-    C_MSG_PAYRISE_MGR_TXT constant messages.msg_text%type :=  'Уважаемый %s %s! Вашему сотруднику %s %s увеличен оклад с %s до %s.';
-    -- Уважаемый < FIRST_NAME > < LAST_NAME >! Вашему сотруднику < FIRST_NAME > < LAST_NAME > увеличен оклад с < SALARY old > до < SALARY new >.
+    C_MSG_PAYRISE_MGR_TXT constant messages.msg_text%type :=  'Уважаемый %s %s! Вашему сотруднику %s %s изменен оклад с %s до %s.';
+    -- Уважаемый < FIRST_NAME > < LAST_NAME >! Вашему сотруднику < FIRST_NAME > < LAST_NAME > изменен оклад с < SALARY old > до < SALARY new >.
 
   ---------------------------------------------------------------
   -- ОШИБКИ

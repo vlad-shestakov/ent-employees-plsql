@@ -1,5 +1,5 @@
 ﻿prompt PL/SQL Developer Export User Objects for user HR@169.254.218.131/XEPDB1
-prompt Created by User on 8 Октябрь 2022 г.
+prompt Created by User on 9 Октябрь 2022 г.
 set define off
 spool _ALL_SCHEMA_EXPORT.log
 
@@ -130,7 +130,7 @@ create table EMPLOYEES
   commission_pct NUMBER(2,2),
   manager_id     NUMBER(6),
   department_id  NUMBER(4),
-  upd_counter    NUMBER not null,
+  upd_counter    INTEGER not null,
   crt_user       VARCHAR2(64),
   crt_date       DATE,
   upd_user       VARCHAR2(64),
@@ -372,7 +372,7 @@ prompt
 create sequence EMPLOYEES_SEQ
 minvalue 1
 maxvalue 9999999999999999999999999999
-start with 824
+start with 908
 increment by 1
 nocache;
 
@@ -394,7 +394,7 @@ prompt
 create sequence MESSAGES_SEQ
 minvalue 1
 maxvalue 9990
-start with 666
+start with 776
 increment by 1
 nocache;
 
@@ -734,8 +734,8 @@ create or replace package entEMPLOYEES is
 
 
     -- Текст сообщения. Повышение зп сотрудника для руководителя
-    C_MSG_PAYRISE_MGR_TXT constant messages.msg_text%type :=  'Уважаемый %s %s! Вашему сотруднику %s %s увеличен оклад с %s до %s.';
-    -- Уважаемый < FIRST_NAME > < LAST_NAME >! Вашему сотруднику < FIRST_NAME > < LAST_NAME > увеличен оклад с < SALARY old > до < SALARY new >.
+    C_MSG_PAYRISE_MGR_TXT constant messages.msg_text%type :=  'Уважаемый %s %s! Вашему сотруднику %s %s изменен оклад с %s до %s.';
+    -- Уважаемый < FIRST_NAME > < LAST_NAME >! Вашему сотруднику < FIRST_NAME > < LAST_NAME > изменен оклад с < SALARY old > до < SALARY new >.
 
   ---------------------------------------------------------------
   -- ОШИБКИ
@@ -884,6 +884,11 @@ create or replace package tabEMPLOYEES_TEST is
   end;
   /**/
 
+  ---------------------------------------------------------------
+  procedure UPD_T
+  -- обновление карточки работника
+  ;
+  
   ---------------------------------------------------------------
   procedure runall
   -- Все тесты
@@ -1319,7 +1324,7 @@ create or replace package body entEMPLOYEES_TEST is
   begin
     dbms_output.put_line('Создает сотрудника, со ссылкой на менеджера (отправит два сообщения на почту), оклад и процент не указаны (усредненные)'); --< Для отладки
 
-    v_dest_addr  := 'employment_t2';
+    v_dest_addr  := 'employment_t2_' || to_char(trunc(dbms_random.value(1,10000+1)));
     v_dest_addr2 := 'NGREENBE';
 
     dbms_output.put_line('Create EMP'); --< Для отладки
@@ -1389,7 +1394,7 @@ create or replace package body entEMPLOYEES_TEST is
   begin
     dbms_output.put_line('Создает сотрудника, без ссылки на менеджера (отправит только одно сообщение на почту), с фиксированным окладом'); --< Для отладки
 
-    v_dest_addr  := 'employment_t3';
+    v_dest_addr  := 'employment_t3_' || to_char(trunc(dbms_random.value(1,10000+1)));
     v_dest_addr2 := '';
 
     dbms_output.put_line('Create EMP'); --< Для отладки
@@ -1459,7 +1464,7 @@ create or replace package body entEMPLOYEES_TEST is
   begin
     dbms_output.put_line('Создает сотрудника со ссылкой на менеджера (отправит два сообщения SMS), с фиксированным окладом'); --< Для отладки
 
-    v_dest_addr  := 'employment_t4';
+    v_dest_addr  := 'employment_t4_' || to_char(trunc(dbms_random.value(1,10000+1)));
     v_dest_addr2 := '515.124.4569'; -- NGREENBE
     v_dest_addr3  := '+7804650';
 
@@ -2009,9 +2014,9 @@ create or replace package body tabEMPLOYEES is
     ИСКЛЮЧЕНИЯ
         исключения при дублировании строк и нарушении других ограничений, наложенных на таблицу.
     /**/
-   is
+  is
   begin
-
+  
     -- Обновим данные
     update EMPLOYEES emp
        set row = p_row
@@ -2126,8 +2131,8 @@ create or replace package body tabEMPLOYEES_TEST is
     dbms_output.put_line('v_row.employee_id = ' || v_row.employee_id);
 
     v_row.employee_id := EMPLOYEES_SEQ.nextval;
-    v_row.email       := v_row.email || '_2';
-
+    v_row.email       := substr(v_row.email, 1, 20) || to_char(trunc(dbms_random.value(1,1000+1)));
+    
     dbms_output.put_line('Inserting...'); --< Для отладки
     tabEMPLOYEES.ins(p_row => v_row, p_update => false);
 
@@ -2148,7 +2153,7 @@ create or replace package body tabEMPLOYEES_TEST is
     --v_row.employee_id := EMPLOYEES_SEQ.nextval;
     v_row.first_name      := 'John';
     v_row.last_name       := 'Connor';
-    v_row.email           := 'abc';
+    v_row.email           := 'mail'||to_char(trunc(dbms_random.value(1,100500+1)));
     v_row.phone_number    := '+79502096411';
     v_row.hire_date       := trunc(sysdate);
     v_row.job_id          := 'FI_MGR';
@@ -2179,6 +2184,7 @@ create or replace package body tabEMPLOYEES_TEST is
     dbms_output.put_line('v_row.employee_id = ' || v_row.employee_id);
     dbms_output.put_line('v_row.last_name = ' || v_row.last_name);
     dbms_output.put_line('v_row.salary = ' || v_row.salary);
+    dbms_output.put_line('v_row.upd_counter = ' || v_row.upd_counter);
 
     v_row.salary       := v_row.salary + 10000;
 
@@ -2187,6 +2193,7 @@ create or replace package body tabEMPLOYEES_TEST is
 
     dbms_output.put_line('v_row.employee_id = ' || v_row.employee_id);
     dbms_output.put_line('v_row.salary = ' || v_row.salary);
+    dbms_output.put_line('v_row.upd_counter = ' || v_row.upd_counter);
   end;
 
 
@@ -2365,21 +2372,32 @@ create or replace trigger TR_EMPLOYEES_BIU
 begin
   -- Обновление полей
   if INSERTING then
-  
+
     if :new.employee_id is null then
       :new.employee_id := EMPLOYEES_SEQ.nextval;
     end if;
-  
+
     :new.upd_counter := 0;
-  
+    --dbms_utility.get_time; -- счетчик для оптимистичной блокировки
+
     :new.crt_user := upper(sys_context('USERENV', 'SESSION_USER'));
     :new.crt_date := sysdate;
-  
+
   elsif UPDATING then
-    
+
+    -- Если старая версия в базе и обновляемая изменились
+    if (:new.upd_counter != :old.upd_counter ) then
+      -- Мы пытаемся обновить обновленную версию строки
+      raise_application_error(-20000, 'Ошибка обновления записи по блокировке');
+    end if;
+    /**/
+
     :new.upd_user := upper(sys_context('USERENV', 'SESSION_USER'));
     :new.upd_date := sysdate;
-  
+
+    :new.upd_counter := :old.upd_counter + 1;
+    --dbms_utility.get_time; -- счетчик для оптимистичной блокировки
+
   end if;
 
 end TR_MESSAGES_BI_SEQ;
