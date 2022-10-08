@@ -16,6 +16,11 @@
   /**/
 
   ---------------------------------------------------------------
+  procedure UPD_T
+  -- обновление карточки работника
+  ;
+  
+  ---------------------------------------------------------------
   procedure runall
   -- Все тесты
   ;
@@ -67,8 +72,8 @@ create or replace package body tabEMPLOYEES_TEST is
     dbms_output.put_line('v_row.employee_id = ' || v_row.employee_id);
 
     v_row.employee_id := EMPLOYEES_SEQ.nextval;
-    v_row.email       := v_row.email || '_2';
-
+    v_row.email       := substr(v_row.email, 1, 20) || to_char(trunc(dbms_random.value(1,1000+1)));
+    
     dbms_output.put_line('Inserting...'); --< Для отладки
     tabEMPLOYEES.ins(p_row => v_row, p_update => false);
 
@@ -89,7 +94,7 @@ create or replace package body tabEMPLOYEES_TEST is
     --v_row.employee_id := EMPLOYEES_SEQ.nextval;
     v_row.first_name      := 'John';
     v_row.last_name       := 'Connor';
-    v_row.email           := 'abc';
+    v_row.email           := 'mail'||to_char(trunc(dbms_random.value(1,100500+1)));
     v_row.phone_number    := '+79502096411';
     v_row.hire_date       := trunc(sysdate);
     v_row.job_id          := 'FI_MGR';
@@ -120,6 +125,7 @@ create or replace package body tabEMPLOYEES_TEST is
     dbms_output.put_line('v_row.employee_id = ' || v_row.employee_id);
     dbms_output.put_line('v_row.last_name = ' || v_row.last_name);
     dbms_output.put_line('v_row.salary = ' || v_row.salary);
+    dbms_output.put_line('v_row.upd_counter = ' || v_row.upd_counter);
 
     v_row.salary       := v_row.salary + 10000;
 
@@ -128,6 +134,7 @@ create or replace package body tabEMPLOYEES_TEST is
 
     dbms_output.put_line('v_row.employee_id = ' || v_row.employee_id);
     dbms_output.put_line('v_row.salary = ' || v_row.salary);
+    dbms_output.put_line('v_row.upd_counter = ' || v_row.upd_counter);
   end;
 
 

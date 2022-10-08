@@ -479,9 +479,9 @@ create or replace package body tabEMPLOYEES is
     ИСКЛЮЧЕНИЯ
         исключения при дублировании строк и нарушении других ограничений, наложенных на таблицу.
     /**/
-   is
+  is
   begin
-
+  
     -- Обновим данные
     update EMPLOYEES emp
        set row = p_row
