@@ -2,6 +2,21 @@
 
 Тестовое задание PL/SQL
 
+## Задача
+
+- [_TASK.md                       ](./_TASK.md                    )
+
+## Результат тестирования
+
+- <a href="./TestLog Результат тестирования PLSQL_ENT_EMPLOYEES.sql">TestLog Результат тестирования PLSQL_ENT_EMPLOYEES.sql</a>
+
+## Инициализация
+
+* Развернуть схему [sql/_ALL_SCHEMA_EXPORT.sql    ](./sql/_ALL_SCHEMA_EXPORT.sql    )
+* Развернуть данные [sql/_ALL_SCHEMA_DATA.sql     ](./sql/_ALL_SCHEMA_DATA.sql    )
+* Запустить пакет с тестами - <a href="./TestLog Тестирование пакетов PLSQL_ENT_EMPLOYEES.sql">TestLog Тестирование пакетов PLSQL_ENT_EMPLOYEES.sql</a>
+
+
 ## Состав проекта
   
 |             Объекты БД        |                                              |                        |
@@ -24,16 +39,3 @@
 | **Пакет entEMPLOYEES**      | [sql/entemployees.sql       ](./sql/entemployees.sql      )| Бизнес-функции      |
 | Пакет entEMPLOYEES_TEST     | [sql/entemployees_test.sql    ](./sql/entemployees_test.sql     )| Тестирование пакета    |
  
-## Инициализация
-
-* Развернуть схему [sql/_ALL_SCHEMA_EXPORT.sql    ](./sql/_ALL_SCHEMA_EXPORT.sql    )
-* Развернуть данные [sql/_ALL_SCHEMA_DATA.sql     ](./sql/_ALL_SCHEMA_DATA.sql    )
-* Запустить пакет с тестами - <a href="./TestLog Тестирование пакетов PLSQL_ENT_EMPLOYEES.sql">TestLog Тестирование пакетов PLSQL_ENT_EMPLOYEES.sql</a>
-
-## Задача
-
-- [_TASK.md                       ](./_TASK.md                    )
-
-## Результат тестирования
-
-- <a href="./TestLog Результат тестирования PLSQL_ENT_EMPLOYEES.sql">TestLog Результат тестирования PLSQL_ENT_EMPLOYEES.sql</a>
