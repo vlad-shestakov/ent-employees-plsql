@@ -1,5 +1,5 @@
 ﻿prompt PL/SQL Developer Export User Objects for user HR@169.254.218.131/XEPDB1
-prompt Created by User on 9 Октябрь 2022 г.
+prompt Created by User on 10 Октябрь 2022 г.
 set define off
 spool _ALL_SCHEMA_EXPORT.log
 
@@ -372,7 +372,7 @@ prompt
 create sequence EMPLOYEES_SEQ
 minvalue 1
 maxvalue 9999999999999999999999999999
-start with 908
+start with 947
 increment by 1
 nocache;
 
@@ -394,7 +394,7 @@ prompt
 create sequence MESSAGES_SEQ
 minvalue 1
 maxvalue 9990
-start with 776
+start with 823
 increment by 1
 nocache;
 
@@ -494,8 +494,8 @@ create or replace package tabEMPLOYEES is
   -- КОНСТАНТЫ
 
     С_MSG_TYPE_EMAIL   CONSTANT messages.msg_type%type := 'email';
-    С_MSG_TYPE_SMS   CONSTANT messages.msg_type%type := 'sms';
-    С_MSG_TYPE_DEF   CONSTANT messages.msg_type%type := С_MSG_TYPE_EMAIL
+    С_MSG_TYPE_SMS     CONSTANT messages.msg_type%type := 'sms';
+    С_MSG_TYPE_DEF     CONSTANT messages.msg_type%type := С_MSG_TYPE_EMAIL
     -- Тип отправляемого сообщения по-умолчанию
     ;
 
@@ -606,10 +606,10 @@ create or replace package tabEMPLOYEES is
   ---------------------------------------------------------------
   procedure SEL
   (
-    p_id        in EMPLOYEES.EMPLOYEE_ID%type
-   ,p_row       out EMPLOYEES%rowtype
-   ,p_forUpdate in boolean := false
-   ,p_raise     in boolean := true
+    p_id        in  employees.employee_id%type
+   ,p_row       out employees%rowtype
+   ,p_forUpdate in  boolean := false
+   ,p_raise     in  boolean := true
   )
   /*
     Процедура выполняет извлечение записи по ключу из таблицы EMPLOYEES
@@ -1920,14 +1920,14 @@ create or replace package body tabEMPLOYEES is
 
     /**/
    is
-    -- Выборка сотрудника для обновления
-    cursor CUR_EMPLOYEES(c_employee_id in number) is
+    -- Выборка сотрудника без обновления
+    cursor CUR_EMPLOYEES(c_employee_id in employees.employee_id%type) is
       select em.*
         from EMPLOYEES em
        where em.employee_id in c_employee_id;
 
-    -- Выборка сотрудника без обновления
-    cursor CUR_EMPLOYEES_FU(c_employee_id in number) is
+    -- Выборка сотрудника для обновления
+    cursor CUR_EMPLOYEES_FU(c_employee_id in employees.employee_id%type) is
       select em.*
         from EMPLOYEES em
        where em.employee_id in c_employee_id
@@ -1951,6 +1951,7 @@ create or replace package body tabEMPLOYEES is
     end if;
 
   exception
+    
     when others then
       -- Если флаг обработки исключений включен - обрабатываем
       if p_raise then
@@ -2065,7 +2066,7 @@ create or replace package body tabEMPLOYEES is
       p_id         - Код записи для таблицы EMPLOYEES
     /**/
   is
-    v_res number := 0;
+    v_res number;
   begin
     select count(*) as cnt
       into v_res

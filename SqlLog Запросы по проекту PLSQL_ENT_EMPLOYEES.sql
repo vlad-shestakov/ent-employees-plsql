@@ -1,6 +1,7 @@
 -- SqlLog Запросы по проекту PLSQL_ENT_EMPLOYEES
 
 ---------------------------------------------------------------
+/
 -- Регионы
 select *
   from REGIONS r
@@ -252,6 +253,14 @@ select distinct
      and em.department_id = 50
      and em.job_id = 'ST_CLERK'
     -- and em.employee_id in 107
+;/**/ 
+
+---------------------------------------------------------------
+-- События интеграции
+select *
+  from MESSAGES
+ where 1=1
+ order by 1 desc
 ;/**/ 
 
 

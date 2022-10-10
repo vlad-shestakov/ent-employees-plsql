@@ -10,8 +10,8 @@
   -- КОНСТАНТЫ
 
     С_MSG_TYPE_EMAIL   CONSTANT messages.msg_type%type := 'email';
-    С_MSG_TYPE_SMS   CONSTANT messages.msg_type%type := 'sms';
-    С_MSG_TYPE_DEF   CONSTANT messages.msg_type%type := С_MSG_TYPE_EMAIL
+    С_MSG_TYPE_SMS     CONSTANT messages.msg_type%type := 'sms';
+    С_MSG_TYPE_DEF     CONSTANT messages.msg_type%type := С_MSG_TYPE_EMAIL
     -- Тип отправляемого сообщения по-умолчанию
     ;
 
@@ -122,10 +122,10 @@
   ---------------------------------------------------------------
   procedure SEL
   (
-    p_id        in EMPLOYEES.EMPLOYEE_ID%type
-   ,p_row       out EMPLOYEES%rowtype
-   ,p_forUpdate in boolean := false
-   ,p_raise     in boolean := true
+    p_id        in  employees.employee_id%type
+   ,p_row       out employees%rowtype
+   ,p_forUpdate in  boolean := false
+   ,p_raise     in  boolean := true
   )
   /*
     Процедура выполняет извлечение записи по ключу из таблицы EMPLOYEES
@@ -385,14 +385,14 @@ create or replace package body tabEMPLOYEES is
 
     /**/
    is
-    -- Выборка сотрудника для обновления
-    cursor CUR_EMPLOYEES(c_employee_id in number) is
+    -- Выборка сотрудника без обновления
+    cursor CUR_EMPLOYEES(c_employee_id in employees.employee_id%type) is
       select em.*
         from EMPLOYEES em
        where em.employee_id in c_employee_id;
 
-    -- Выборка сотрудника без обновления
-    cursor CUR_EMPLOYEES_FU(c_employee_id in number) is
+    -- Выборка сотрудника для обновления
+    cursor CUR_EMPLOYEES_FU(c_employee_id in employees.employee_id%type) is
       select em.*
         from EMPLOYEES em
        where em.employee_id in c_employee_id
@@ -416,6 +416,7 @@ create or replace package body tabEMPLOYEES is
     end if;
 
   exception
+    
     when others then
       -- Если флаг обработки исключений включен - обрабатываем
       if p_raise then
@@ -530,7 +531,7 @@ create or replace package body tabEMPLOYEES is
       p_id         - Код записи для таблицы EMPLOYEES
     /**/
   is
-    v_res number := 0;
+    v_res number;
   begin
     select count(*) as cnt
       into v_res

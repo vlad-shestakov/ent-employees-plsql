@@ -1,5 +1,5 @@
 ﻿prompt PL/SQL Developer Export User Objects for user HR@169.254.218.131/XEPDB1
-prompt Created by User on 9 Октябрь 2022 г.
+prompt Created by User on 10 Октябрь 2022 г.
 set define off
 spool dboracle.log
 
